@@ -1,0 +1,8 @@
+{# begin {templatelocation} #}
+<p>
+  <input type="hidden" name="mailchimp_havedata" value="1" />
+  <label for="mailchimp_subscribe">{$LANG_MLCH['subscribe_to_list']}?</label>
+  <input type="checkbox" id="mailchimp_subscribe" name="mailchimp_subscribe" value="1" {chk} />
+  <img src="{layout_url}/images/info.png" width="16" height="16" class="gl_mootip" title="{$LANG_MLCH['hlp_sub_checkbox']}" />
+</p>
+{# end {templatelocation} #}

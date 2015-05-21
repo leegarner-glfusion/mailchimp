@@ -1,0 +1,9 @@
+/*  $Id: style.css 18 2013-04-10 22:42:51Z root $   */
+#mlch_form label {
+  width: 16em;
+  float: left;
+  text-align: right;
+  margin-right: 0.5em;
+  display: block
+}
+

@@ -1,0 +1,14 @@
+{# begin {templatelocation} #}
+<tr>
+  <td style="width:100px;">
+    <label for="mailchimp_subscribe">{$LANG_MLCH['subscribe_to_list']}:</label>
+  </td>
+  <td>
+    <input type="hidden" name="mailchimp_oldsub" value="{mailchimp_prev_check}" />
+    <input type="checkbox" id="mailchimp_subscribe" value="1"
+        name="mailchimp_subscribe" {mailchimp_checked} />
+    <input type="hidden" name="mailchimp_old_fullname" value="{mailchimp_old_fullname}" />
+    <input type="hidden" name="mailchimp_old_email" value="{mailchimp_old_email}" />
+  </td>
+</tr>
+{# end {templatelocation} #}

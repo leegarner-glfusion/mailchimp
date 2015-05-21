@@ -1,0 +1,13 @@
+{# begin {templatelocation} #}
+<p>
+  <input type="checkbox" name="mailchimp_signup" id="mailchimp_signup" checked="checked" />
+  <label for="mailchimp_signup">{$LANG_MLCH['subscribe_to_list']}</label>
+</p>
+<select id="mailchimp_list" name="mailchimp_list" class="input">
+  <option value="">{$LANG_MLCH['select_list']}</option>
+  <!-- BEGIN list_select -->
+  <option value="{list_id}">{list_name}</option>
+  <!-- END list_select -->
+  <option value="no list">{$LANG_MLCH['no_list']}</option>
+</select>
+{# end {templatelocation} #}
