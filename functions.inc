@@ -1,5 +1,4 @@
 <?php
-//  $Id: functions.inc 36 2014-08-24 18:17:47Z root $
 /**
 *   API functions for the MailChimp plugin
 *   This plugin integrats with MailChimp (www.mailchimp.com).

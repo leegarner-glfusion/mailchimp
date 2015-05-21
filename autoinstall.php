@@ -1,5 +1,4 @@
 <?php
-//  $Id: autoinstall.php 31 2014-07-04 01:40:47Z root $
 /**
 *   Automatic installation routines for the Mailer plugin
 *

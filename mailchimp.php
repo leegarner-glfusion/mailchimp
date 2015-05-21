@@ -1,5 +1,4 @@
 <?php
-//  $Id: mailchimp.php 31 2014-07-04 01:40:47Z root $
 /**
 *   Table definitions and other static config variables.
 *   This plugin does not use any database tables.

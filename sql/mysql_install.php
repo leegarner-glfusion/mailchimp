@@ -1,5 +1,4 @@
 <?php
-//  $Id: mysql_install.php 35 2014-08-20 19:48:01Z root $
 /**
 *   Table definitions for the Mailchimp plugin
 *   @author     Lee Garner <lee@leegarner.com>

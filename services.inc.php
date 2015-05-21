@@ -1,5 +1,4 @@
 <?php
-//  $Id: services.inc.php 80 2013-10-22 18:22:59Z root $
 /**
 *   Service functions for the Mailchimp plugin.
 *   This file provides functions to be called by other plugins, such

@@ -33,7 +33,6 @@ if (!SEC_hasRights('mailchimp.admin')) {
 *   Import our current users to our subscriber list.
 *   Only imports users that are not in the cache table
 *
-*   Future option
 *   @return string - success message
 */
 function MLCH_importUsers()

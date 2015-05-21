@@ -1,5 +1,4 @@
 <?php
-//  $Id: install_defaults.php 18 2013-04-10 22:42:51Z root $
 /**
 *   Default items for the MailChimp plugin
 *

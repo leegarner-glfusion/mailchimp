@@ -1,5 +1,4 @@
 <?php
-//  $Id: english.php 33 2014-08-18 20:23:20Z root $
 /**
 *   English language strings for the MailChimp plugin
 *
