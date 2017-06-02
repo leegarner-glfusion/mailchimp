@@ -1,5 +1,4 @@
 <?php
-//  $Id: index.php 28 2011-01-14 17:36:55Z root $
 /**
 *   Administrative entry point for the MailChimp plugin
 *   No admin function is available
@@ -7,8 +6,8 @@
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
 *   @package    mailchimp
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
+*   @version    0.1.0
+*   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
 */
@@ -32,6 +31,7 @@ if (!SEC_hasRights('mailchimp.admin')) {
 /**
 *   Import our current users to our subscriber list.
 *   Only imports users that are not in the cache table
+*   Updates the list segment from the Membership plugin if available.
 *
 *   @return string - success message
 */
@@ -56,63 +56,33 @@ function MLCH_importUsers()
     $result = DB_query($sql);
     $list_id = DB_escapeString($_CONF_MLCH['def_list']);
     $cache_vals = array();
-    while ($A = DB_fetchArray($result, false)) {
-       $status = LGLIB_invokeService('membership', 'mailingSegment',
-             array('uid'=>$A['u_uid'], 'email'=>$A['email']), $segment, $msg);
-        $memstatus = $status == PLG_RET_OK ? $segment : '';
-        $merge_vars = array('MEMSTATUS' => $memstatus);  // always update
-        $emails[] = array('email' => array(
-                'email' => $A['email'],
-                'merge_vars' => $merge_vars,
-        ) );
-        //$retval .= "DEBUG: {$A['u_uidi']} -- $segment<br />\n";
-
-        // Save the pertinent data, $sub will be updated by MailChimp status
-        $cache_vals[$A['email']] = array('uid' => $A['u_uid'], 'sub' => 0);
-    }
-
     USES_mailchimp_class_api();
     $api = new Mailchimp($_CONF_MLCH['api_key']);
-    $params = array(
-        'id' => $_CONF_MLCH['def_list'],
-        'batch' => $emails,
-        'double_optin' => true,
-        'update_existing' => false,
-        'replace_interests' => false,
-    );
-    $mc_status = $api->call('lists/batch-subscribe', $params);
-    if (isset($mc_status['error'])) {
-        $retval .= '<span class="alert">' . $mc_status['error'] . '</span>';
-    } else {
-        $stats = array(
-            'add' => 'Additions',
-            'update' => 'Updates',
+    while ($A = DB_fetchArray($result, false)) {
+        $status = LGLIB_invokeService('membership', 'mailingSegment',
+             array('uid'=>$A['u_uid'], 'email'=>$A['email']), $segment, $msg);
+        $memstatus = $status == PLG_RET_OK ? $segment : '';
+        $args = array(
+            'email_address' => $A['email'],
+            'status' => 'subscribed',
+            'merge_fields' => array('MEMSTATUS' => $memstatus),
         );
-        foreach ($stats as $key => $name) {
-            $retval .= "<p>$name: ({$mc_status[$key.'_count']})<br />\n";
-            foreach ($mc_status[$key.'s'] as $data) {
-                $retval .= $data['email'];
-                if (isset($data['error'])) {
-                    $retval .= ' -- ' . $data['error'];
-                }
-                $retval .= "<br />\n";
-            }
-            $retval .= "</p>\n";
+        $mc_status = $api->subscribe($A['email'], $args, $list_id);
+        if ($mc_status['status'] == 'subscribed') {
+            $cache_vals[$A['email']] = array('uid' => $A['u_uid'], 'sub' => 0);
+            $success++;
+        } else {
+            $msg .= $mc_status['detail'] . '<br />' . LB;
+            $errors++;
         }
-        $retval .= "<p>Errors: ({$mc_status['error_count']})<br />\n";
-        foreach ($mc_status['errors'] as $data) {
-            if ($data['code'] == 214) {
-                // already subscribed, update the value for the DB
-                $cache_vals[$data['email']['email']]['sub'] = 1;
-            }
-            $retval .= $data['error'] . "<br />\n";
-        }
-        $retval .= "</p>\n";
     }
+    $retval .= "<p>Success: $success<br />\n";
+    $retval .= "Errors: $errors</p>\n";
+    $retval .= "<p>$msg</p>\n";
 
     // Update the cache table. All imported users will be set to unsubscribed
     // which will be updated when they confirm. $info['sub'] has been changed
-    // from 0 to 1 if MailChimp reports that they're already subscribed. 
+    // from 0 to 1 if MailChimp reports that they're already subscribed.
     $sql_vals = array();
     foreach ($cache_vals as $email => $info) {
         $sql_vals [] = "({$info['uid']}, '$list_id', {$info['sub']})";
@@ -122,8 +92,7 @@ function MLCH_importUsers()
         $upd_sql = "INSERT INTO {$_TABLES['mailchimp_cache']} VALUES $values";
         DB_query($upd_sql, 1);
     }
-    
-    return $retval;       
+    return $retval;
 }
 
 
@@ -156,7 +125,6 @@ function MLCH_adminMenu()
             $menu_arr, $LANG_MLCH['instr_admin'],
             plugin_geticon_mailchimp());
     $retval .= COM_endBlock();
-
     return $retval;
 }
 

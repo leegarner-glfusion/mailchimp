@@ -1,120 +1,84 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<!-- $Id: config.html 12 2010-09-13 22:06:32Z root $ -->
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html xmlns="http://www.w3.org/1999/xhtml" class="uk-height-1-1">
 <head>
-  <meta http-equiv="Content-Type" content="text/html;charset=iso-8859-1" />
-  <link href="../../../docs/docstyle.css" type="text/css" rel="stylesheet" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="apple-touch-icon-precomposed" href="../../layout/cms/images/apple-touch-icon.png">
+  <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/uikit/2.26.3/css/uikit.almost-flat.min.css">
   <meta name="robots" content="noindex,nofollow" />
-  <title>MailChimp Plugin - glFusion CMS</title>
+  <title>glFusion Mailchimp Plugin Configuration</title>
+  <style>
+    html{background:#f9f9f9}.tm-dropdown,.tm-navbar{background:#325482!important}.uk-form label{font-weight:700}.tm-navbar{border-radius:0!important;padding:1px 0 6px!important;border:none!important}.tm-navbar-brand{color:#eee!important}.tm-navbar-brand a{text-shadow:none;color:#fff}.tm-navbar-brand a:hover{color:#ababab;text-decoration:none}.tm-navbar-brand-oc a{text-shadow:none;color:#fff}.tm-navbar-brand-oc a:hover{color:#ababab;text-decoration:none}.tm-navbar-nav>li>a{border:none;border-radius:3px!important;font-size:15px!important;height:40px!important;margin:0!important}.tm-dropdown{color:#000;border-radius:0!important;border:0!important}.tm-nav-navbar>li>a{color:#fff!important}.tm-navbar::after,.tm-navbar::before{margin-top:7px!important}.tm-navbar-nav>li.uk-open>a,.tm-navbar-nav>li:hover>a,.tm-navbar-nav>li>a:focus{color:#fff;outline:0;background:#35B3EE!important}.tm-navbar-nav>li>a{color:#fff!important;text-shadow:none!important}.tm-navbar-toggle{color:#ccc!important;text-shadow:none!important}.tm-navbar-toggle:focus,.tm-navbar-toggle:hover{color:#fff!important}.tm-footer{background:#252525;border-top:1px solid #232425;margin-bottom:0;bottom:0;padding:10px;color:#fff}.tm-wrapper{min-height:100%;margin:0 auto -51px!important}.tm-push,footer{height:51px}.uk-navbar-content > a {color:#fff !important;}
+  </style>
 </head>
 
-<body style="direction: ltr;">
-<div id="gl_container_fluid">
-  <div id="gl_header"><span style="color: rgb(255, 255, 255); float: left; padding-left: 10px; padding-top: 5px; vertical-align: middle;">glFusion Documentation Project
-  </span><a style="float: right; padding-right: 10px; padding-top: 5px; vertical-align: middle;" href="http://www.glfusion.org/wiki/doku.php">glFusion Wiki</a>
-</div>
-<div id="gl_wrapper">
-<div class="body-container">
-<h1><a name="mailer_plugin" id="mailer_plugin">MailChimp Plugin</a></h1>
+<body class="uk-height-1-1">
+  <div class="tm-wrapper">
+    <nav class="uk-navbar uk-navbar-attached tm-navbar uk-margin-bottom">
+      <div class="uk-navbar-brand tm-navbar-brand">
+        glFusion Profile Plugin Configuration
+      </div>
+      <div class="uk-navbar-flip uk-hidden-small">
+        <div class="uk-navbar-content tm-navbar-content" style="text-shadow:none;">
+          <a href="https://www.glfusion.org/wiki/">glFusion Wiki</a>
+        </div>
+      </div>
+    </nav>
 
-<div class="level1">
-<p>The MailChimp Plugin allows site visitors to subscribe to announcements and other communications.  This serves as a one-way mailing list.  Unlike the built-in "Mail Users" function, non-members can also subscribe to mailings.</p>
-<h1><a name="mailer_plugin_configuration_options" id="mailer_plugin_configuration_options">MailChimp Plugin Configuration Options</a></h1>
+    <div class="uk-container uk-container-center uk-margin-bottom">
+      <h1>glFusion Mailchimp Plugin Configuration</h1>
+      <h2>Main Options</h2>
 
-<table class="inline">
-  <tbody>
-    <tr>
-      <th class="col0 leftalign" colspan="2">Main Settings</th>
-    </tr>
+      <dl id="desc_api_key">
+        <dt>API Key</dt>
+        <dd>Enter your API key here.</dd>
+      </dl>
 
-    <tr class="row0">
-      <th class="col0 leftalign">Option </th>
-      <th class="col1 leftalign">Description </th>
-    </tr>
+      <dl id="desc_def_list">
+        <dt>Default List</dt>
+        <dd>Select the default mailing list for subscribers. This list must already be set up for your account at MailChimp. Currently, only the default list can accept subscriptions through this plugin. Note: You must add your API Key first and save your configuration before MailChimp lists will show up.</dd>
+      </dl>
 
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_api_key"></a>API Key</td>
-      <td class="col1 leftalign">
-      Enter your MailChimp API key here.
-      </td>
-    </tr>
-
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_def_list"></a>Default List</td>
-      <td class="col1 leftalign">
-      Select the default mailing list for subscribers. This list must already be set up for your account at MailChimp. Currently, only the default list can accept subscriptions through this plugin. <b>Note: You must add your API Key first and save your configuration before MailChimp lists will show up.</b>
-      </td>
-    </tr>
-
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_sub_register"></a>Subscribe at Registration</td>
-      <td class="col1 leftalign">
-    Select whether new site users can subscribe to the default mailing list during registration. Some options are not recommended but may be appropriate, depending on your site&apos;s purpose.
+      <dl id="desc_sub_register">
+        <dt>Subscribe at Registration</dt>
+        <dd>Select whether new site users can subscribe to the default mailing list during registration. Some options are not recommended but may be appropriate, depending on your site&apos;s purpose.
 <ul><li>The option to subscribe is not available</li>
 <li>New uses are automatically subscribed (<i>not recommended</i>)</li>
 <li>New users may optionally subscribe, checkbox is checked (<i>not recommended</i>)</li>
-<li>New users may optionally subscribe, checkbox is unchecked</li></ul>
-      </td>
-    </tr>
+<li>New users may optionally subscribe, checkbox is unchecked</li></ul></dd>
+      </dl>
 
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_dbl_optin_members"></a>Double-opt-in for profile changes?</td>
-      <td class="col1 leftalign">Select &quot;Yes&quot; to require double opt-in when a user subscribes to your list by editing their own profile. (<i>Recommended</i>)
-      </td>
-    </tr>
+      <dl id="desc_dbl_optin_members">
+        <dt>Double-opt-in for profile changes?</dt>
+        <dd>Select &quot;Yes&quot; to require double opt-in when a user subscribes to your list by editing their own profile. (<i>Recommended</i>)</dd>
+      </dl>
 
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_sync_at_login"></a>Sync At Login?</td>
-      <td class="col1 leftalign">Select whether user acconts should be automatically synchronized with MailChimp during login. This is important if you choose not to enable Webhooks, and can be a good backup in case some Webhook messages aren&apos;t received. It may also increase the response time to user logins.
-      </td>
-    </tr>
+      <dl id="desc_sync_at_login">
+        <dt>Sync At Login?</dt>
+        <dd>Select whether user acconts should be automatically synchronized with MailChimp during login. This is important if you choose not to enable Webhooks, and can be a good backup in case some Webhook messages aren&apos;t received. It may also increase the response time to user logins.</dd>
+      </dl>
 
-    <tr>
-      <th class="col0 leftalign" colspan="2">Webhook Settings</th>
-    </tr>
-    <tr>
-      <td class="col0 leftalign" colspan="2">A Webhook allows MailChimp to send a POST request to your server when a user subscribes, unsubscribes, or changes their email address on MailChimp&apos;s web site. The MailChimp plugin maintains a table of subscriber IDs to determine how the subscription options should be shown in the block or account settings. Enabling the Webhook is recommended to help keep your site in sync with MailChimp.</td>
-    </tr>
+      <dl id="desc_webhook_key">
+        <dt>Webhook Key</dt>
+        <dd>When you set the Webhook URL in MailChimp you can add a key value to increase security. Your Webhook URL should look like &quot;http://yoursite/mailchimp/hook.php?key=SecretKey&quot;, and you would then enter &quot;SecretKey&quot; in this field. If you omit the key then the Webhook will still work but anyone would be able to manipulate your data by sending a specially-crafted POST request. The parameter mane must be &quot;key&quot;.</dd>
+      </dl>
 
-    <tr class="row0">
-      <th class="col0 leftalign">Option </th>
-      <th class="col1 leftalign">Description </th>
-    </tr>
+      <dl id="desc_webhook_handlesub">
+        <dt>Webhook handles Subscriptions?</dt>
+        <dd>Select &quot;Yes&quot; to have users who subscribe directly via MailChimp updated in your database. If they are site members and their email address matches, they&apos;ll be added to the local database so their account preferences are in sync and they won't be shown the subscription block when they&apos;re logged in. <i>Recommended</i></dd>
+      </dl>
 
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_webhook_key"></a>Webhook Key</td>
-      <td class="col1 leftalign">
-        When you set the Webhook URL in MailChimp you can add a key value to increase security. Your Webhook URL should look like &quot;http://yoursite/mailchimp/hook.php?key=SecretKey&quot;, and you would then enter &quot;SecretKey&quot; in this field. If you omit the key then the Webhook will still work but anyone would be able to manipulate your data by sending a specially-crafted POST request. The parameter mane must be &quot;key&quot;.
-      </td>
-    </tr>
+      <dl id="desc_webhook_handleunsub">
+        <dt>Webhook handles Removals?</dt>
+        <dd>Select &quot;Yes&quot; to have users who unsubscribe directly via MailChimp updated in your database. If they are site members and their email address matches, they&apos;ll be removed and will again see the subscription block (if used). This also applies to members who&apos;s addresses are cleaned automatically by MailChimp. <i>Recommended</i></dd>
+      </dl>
 
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_webhook_handlesub"></a>Webhook handles Subscriptions?</td>
-      <td class="col1 leftalign">
-        Select &quot;Yes&quot; to have users who subscribe directly via MailChimp updated in your database. If they are site members and their email address matches, they&apos;ll be added to the local database so their account preferences are in sync and they won't be shown the subscription block when they&apos;re logged in. <i>Recommended</i>
-      </td>
-    </tr>
+      <dl id="desc_webhook_handleupemail">
+        <dt>Update user email when MailChimp email changes?</dt>
+        <dd>Select &quot;Yes&quot; to have users who update their email address with MailChimp also have their address changed in your database.</dd>
+      </dl>
 
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_webhook_handleunsub"></a>Webhook handles Removals?</td>
-      <td class="col1 leftalign">
-        Select &quot;Yes&quot; to have users who unsubscribe directly via MailChimp updated in your database. If they are site members and their email address matches, they&apos;ll be removed and will again see the subscription block (if used). This also applies to members who&apos;s addresses are cleaned automatically by MailChimp. <i>Recommended</i>
-      </td>
-    </tr>
-
-    <tr class="row0">
-      <td valign="top" class="col0 leftalign"><a name="desc_webhook_handleupemail"></a>Update user email when MailChimp email changes?</td>
-      <td class="col1 leftalign">
-        Select &quot;Yes&quot; to have users who update their email address with MailChimp also have their address changed in your database.
-      </td>
-    </tr>
-
-  </tbody>
-</table>
-<p></p>
-</div>
-</div>
-</div>
-</div>
+    </div>
+  </div>
 </body>
 </html>

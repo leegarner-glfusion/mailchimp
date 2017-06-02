@@ -1,47 +1,6 @@
 {# begin {templatelocation} #}
-<script type="text/javascript">
-function storeAddress(el) {
-    // Submit the subscription via Ajax. Currently only using the email
-    // address, but the first and last name may be added later
-    var message = document.getElementById("mlch_sub_response");
-    var query_string = "email=" + escape(el.email.value);
-    //if (el.elements.namedItem("fname") != null ) {
-    //    email = email + "&fname=" + escape(el.fname.value);
-    //}
-    //if (el.elements.namedItem("lname") != null) {
-    //    query_string = query_string + "&lname=" + escape(el.lname.value);
-    //}
-
-    el.innerHTML = "{$LANG_MLCH['adding_msg']}";
-    var browser = navigator.appName;
-    if (browser == "Microsoft Internet Explorer") {
-        http = new ActiveXObject("Microsoft.XMLHTTP");
-    } else {
-        http = new XMLHttpRequest();
-    }
-    //http.open("get", "{site_url}/mailchimp/ajax.php?action=add&email="+email, true);
-    http.open("get", "{site_url}/mailchimp/ajax.php?action=add&"+query_string, true);
-    http.onreadystatechange = function() { handleResponse(el, http) };
-    http.send(null);
-}
-
-function handleResponse(el, http) {
-    if (http.readyState == 4) { //Finished loading the response
-        if (http.status == 200) {
-            //el.innerHTML = http.responseText;
-            el.innerHTML = "";
-            document.getElementById("MLCH_form").innerHTML = "";
-            document.getElementById("MLCH_form_text").innerHTML = 
-                        "{$LANG_MLCH['confirm_needed']}";
-        } else {
-            el.innerHTML =  http.statusText;
-        }
-    }
-}
-</script>
-
 <p id="MLCH_form_text">{block_text}</p>
-<form id="MLCH_form" onsubmit="storeAddress(this);return false;">
+<form id="MLCH_form">
 {!if 0}
     <input type="text" name="fname" value="First Name" id="fname" 
         onfocus="if (this.value=='First Name') this.value='';" 
@@ -57,4 +16,34 @@ function handleResponse(el, http) {
         value="{$LANG_MLCH['block_button_text']}" />
 </form>
 <div id="mlch_sub_response">&nbsp;</div>
+
+<script type="text/javascript">
+$("#MLCH_form").submit(function(e) {
+    e.preventDefault();
+    var frm = document.getElementById("MLCH_form");
+    var message = document.getElementById("mlch_sub_response");
+    var dataS = {
+        "action" : "add",
+        "email": escape(frm.email.value),
+    };
+    data = $.param(dataS);
+    $.ajax({
+        type: "POST",
+        dataType: "json",
+        url: "{site_url}/mailchimp/ajax.php",
+        data: data,
+        success: function(result) {
+            try {
+                if (result.status) {
+                    frm.innerHTML = "";
+                }
+                document.getElementById("MLCH_form_text").innerHTML = result.msg;
+            }
+            catch(err) {
+                frm.innerHTML = "Error processing form";
+            }
+        }
+    });
+});
+</script>
 {# end {templatelocation} #}

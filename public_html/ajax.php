@@ -1,5 +1,4 @@
 <?php
-//  $Id: index.php 25 2010-10-04 17:14:59Z root $
 /**
 *   Ajax functions for the Mailchimp plugin
 *   Allows visitors to subscribe or unsubscribe from any mailing lists.
@@ -7,7 +6,7 @@
 *   @author     Lee Garner <lee@leegarner.com>
 *   @copyright  Copyright (c) 2012-2013 Lee Garner <lee@leegarner.com>
 *   @package    mailchimp
-*   @version    0.0.1
+*   @version    0.1.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php 
 *               GNU Public License v2 or later
 *   @filesource
@@ -41,28 +40,32 @@ foreach($expected as $provided) {
     }
 }
 if ($action == 'action') $action = $actionval;
-$content = '';
-
+$success = false;
 switch ($action) {
 case 'add':
-    $address = $_GET['email'];
+    $address = $_POST['email'];
     if (empty($address)) {
-        $content = $LANG_MLCH['email_missing'];
+        $msg = $LANG_MLCH['email_missing'];
     } elseif (!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*$/i", $address)) {
-        $content = $LANG_MLCH['add_error'];
+        $msg = $LANG_MLCH['add_error'];
     } else {
         // Basic checks passed, now try to add the address
         $success = MLCH_subscribe(0, $address);
         switch ($success) {
         case  true:
-            $content = $LANG_MLCH['add_success'];
+            $msg = $_CONF_MLCH['dbl_optin_members'] ?
+                    $LANG_MLCH['confirm_needed'] : $LANG_MLCH['add_success'];
             break;
         default;
-            $content = $LANG_MLCH['add_error'];
+            $msg = $LANG_MLCH['add_error'];
             break;
         }
     }
-    echo $content;
+    $content = array(
+        'msg' => $msg,
+        'status' => $success,
+    );
+    echo json_encode($content);
     exit;
     break;
 

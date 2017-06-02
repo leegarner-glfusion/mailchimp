@@ -4,10 +4,10 @@
 *   This plugin integrats with MailChimp (www.mailchimp.com).
 *
 *   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
+*   @copyright  Copyright (c) 2012-2017 Lee Garner <lee@leegarner.com>
 *   @package    mailchimp
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
+*   @version    0.1.0
+*   @license    http://opensource.org/licenses/gpl-2.0.php
 *               GNU Public License v2 or later
 *   @filesource
 */
@@ -55,6 +55,7 @@ if (!isset($_CONF_MLCH['confirm_period'])) {
 if ($_CONF_MLCH['def_list'][0] == 'x') {
     $_CONF_MLCH['def_list'] = substr($_CONF_MLCH['def_list'], 1);
 }
+$_CONF_MLCH['_is_uikit'] = $_SYSTEM['framework'] == 'uikit' ? true : false;
 
 require_once MLCH_PI_PATH . 'mailchimp.php';
 if (is_file(MLCH_PI_PATH . 'config.php')) {
@@ -65,10 +66,8 @@ if (is_file(MLCH_PI_PATH . 'config.php')) {
 // don't want to call the MC API just to get errors.
 define(MAILCHIMP_ACTIVE, empty($_CONF_MLCH['api_key']) ? 0 : 1);
 define(MLCH_URL, $_CONF['site_url'] . '/' . $_CONF_MLCH['pi_name']);
-define(MLCH_ADMIN_URL, $_CONF['site_admin_url'] . '/plugins/' . 
+define(MLCH_ADMIN_URL, $_CONF['site_admin_url'] . '/plugins/' .
         $_CONF_MLCH['pi_name']);
-
-$_CONF_MLCH['now'] = date('Y-m-d H:i:s');
 
 function USES_mailchimp_class_api()
 {
@@ -90,8 +89,7 @@ function plugin_cclabel_mailchimp()
         return array ($_CONF_MLCH['pi_display_name'],
                 MLCH_ADMIN_URL . '/index.php',
                 plugin_geticon_mailchimp());
-    } 
-
+    }
     return false;
 }
 
@@ -201,7 +199,7 @@ var_dump($out);die;
                 $sub_grps[$data['id']] = explode(', ', $data['groups']);
             }
         }
-        
+
         $T = new Template(MLCH_PI_PATH . 'templates/');
         $T->set_file('profile', 'profile_groups.thtml');
         $T->set_var('mailchimp_checked', $chk);
@@ -262,7 +260,8 @@ function plugin_profileedit_mailchimp($uid, $panel, $fieldset)
         }
 
         $T = new Template(MLCH_PI_PATH . 'templates/');
-        $T->set_file('profile', 'profile.thtml');
+        $tpl = $_CONF_MLCH['_is_uikit'] ? 'profile.uikit.thtml' : 'profile.thtml';
+        $T->set_file('profile', $tpl);
         // Set the template vars. mailchimp_prev_check is used when saving to
         // track whether the variable changes before calling the API
         $T->set_var(array(
@@ -336,9 +335,9 @@ function plugin_enablestatechange_mailchimp ($enable)
 
     // Disable the block when plugin is disabled. Don't automatically enable.
     if ($is_enabled == 0) {
-         DB_query("UPDATE {$_TABLES['blocks']} 
-            SET is_enabled = $is_enabled 
-            WHERE (type = 'phpblock') 
+         DB_query("UPDATE {$_TABLES['blocks']}
+            SET is_enabled = $is_enabled
+            WHERE (type = 'phpblock')
             AND (phpblockfn LIKE 'phpblock_mailchimp%')"
         );
     }
@@ -361,9 +360,9 @@ function plugin_autouninstall_mailchimp ()
         'features' => array('mailchimp.admin'),
         // give the full name of the block, including 'phpblock_', etc
         'php_blocks' => array('phpblock_mailchimp_sub'),
-        // give all vars with their name 
+        // give all vars with their name
         'vars'=> array(),
-        // give the full name of the plugins config data 
+        // give the full name of the plugins config data
         'config_data' => array('mailchimp')
     );
 
@@ -384,7 +383,9 @@ function phpblock_mailchimp_sub()
 
     if (!COM_isAnonUser()) {
         // Anon always sees the block, no way to know if they're subscribed
-        $c = DB_count($_TABLES['mailchimp_cache'], 'uid', $_USER['uid']);
+        $c = DB_count($_TABLES['mailchimp_cache'],
+            array('uid', 'subscribed'),
+            array($_USER['uid'], 1));
         if ($c > 0) return '';
     }
 
@@ -444,13 +445,13 @@ function plugin_templatesetvars_mailchimp ($templatename, &$template)
             break;
 
         case 3:     // Automatic subscription, don't need a template for this
-            $pluginFields = 
+            $pluginFields =
                 '<input type="hidden" name="mailchimp_subscribe value="1" />' .
                 LB;
             break;
         }
         if (!empty($pluginFields)) {
-            $template->set_var('plugin_fields', 
+            $template->set_var('plugin_fields',
                     $existingPluginFields . $pluginFields);
         }
     }
@@ -621,16 +622,16 @@ function MLCH_getLists()
 
     if ($lists === null) {
         $lists = array();
-        if (MAILCHIMP_ACTIVE) {
+        if (MAILCHIMP_ACTIVE && !empty($_CONF_MLCH['api_key'])) {
             USES_mailchimp_class_api();
             $api       = new Mailchimp($_CONF_MLCH['api_key']);
-            $list_data = $api->call('lists/list');
+            $list_data = $api->lists();
             if (is_array($list_data)) {
-                foreach ($list_data['data'] as $key => $list) {
+                foreach ($list_data['lists'] as $key => $list) {
                     $members = $api->listMembers($list['id'], 'subscribed', NULL, 0, 0);
                     $lists[$key]['id']      = $list['id'];
                     $lists[$key]['name']    = $list['name'];
-                    $lists[$key]['members'] = $members['total'];
+                    $lists[$key]['members'] = $members['total_items'];
                 }
             }
         }
@@ -645,7 +646,7 @@ function MLCH_getLists()
 *
 *   @return mixed   Array of lists, or false on failure
 */
-function MLCH_getGroups($list_id='')
+function XMLCH_getGroups($list_id='')
 {
     global $_CONF_MLCH;
 
@@ -689,7 +690,7 @@ function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
     }
 
     // Mailchimp list choice. Not yet implemented.
-    //$list = isset($_POST['mlch_list_id']) ? 
+    //$list = isset($_POST['mlch_list_id']) ?
     //    $_POST['mlch_list_id'] : $_CONF_MLCH['def_list'];
     if (empty($list)) $list = $_CONF_MLCH['def_list'];
     if (empty($list)) return false;
@@ -726,25 +727,29 @@ function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
              array('uid'=>$uid, 'email'=>$email), $segment, $msg);
     if ($status == PLG_RET_OK) {
         $memstatus = $segment;
+        $merge_vars['MEMSTATUS'] = $memstatus;  // always update
     }
-    $merge_vars['MEMSTATUS'] = $memstatus;  // always update
 
     // Process Subscription
     USES_mailchimp_class_api();
     $api = new Mailchimp($_CONF_MLCH['api_key']);
     $params = array(
         'id' => $list,
-        'email' => array('email' => $email),
-        'merge_vars' => $merge_vars,
+        'email_address' => $email,
+        'merge_fields' => $merge_vars,
         'email_type' => 'html',
+        'status' => $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed',
         'double_optin' => $dbl_opt,
     );
-    $mc_status = $api->call('lists/subscribe', $params);
-    if (isset($mc_status['error'])) {
+COM_errorLog(print_r($params,true));
+    $mc_status = $api->subscribe($email, $params, $list);
+    if (!$api->success()) {
+COM_errorLog(print_r($api->getLastResponse(),true));
         MLCH_auditLog("Failed to subscribe $email to $list. Error: " .
-            $api->errorMessage);
+            $api->getLastError(), true);
         $retval = false;
     } else {
+COM_errorLog($api->getLastError());
         if ($uid > 1) {
             MLCH_updateCache($uid, $list);     // Update cache if not anon
         }
@@ -782,15 +787,8 @@ function MLCH_unsubscribe($uid, $email='', $list = '')
 
     USES_mailchimp_class_api();
     $api = new Mailchimp($_CONF_MLCH['api_key']);
-    $params = array(
-        'id' => $list,
-        'email' => array('email' => $email),
-        'delete_member' => false,
-        'send_goodbye' => false,
-        'send_notify' => false,
-    );
-    $mc_status = $api->call('lists/unsubscribe', $params);
-    if (!isset($mc_status['error']) || $mc_status['code'] == 215) {
+    $mc_status = $api->subscribe($email, $list);
+    if ($api->success()) {
         // List_NotSubscribed error is ok
         MLCH_auditLog("Unsubscribed $email from $list");
         // Delete records from cache.
@@ -802,7 +800,7 @@ function MLCH_unsubscribe($uid, $email='', $list = '')
         $retval = true;
     } else {
         MLCH_auditLog("Failed to unsubscribe $email from $list. Error" .
-            $api->errorMessage);
+            $api->getLastError());
         $retval = false;
     }
     return $retval;
@@ -836,7 +834,7 @@ function MLCH_updateCache($uid, $list='', $clear=false)
     if ($clear) {
         DB_query("UPDATE {$_TABLES['mailchimp_cache']}
                 SET subscribed = 0
-                WHERE uid = $uid");        
+                WHERE uid = $uid");
     }
 
     foreach ($lists as $list) {
@@ -866,7 +864,7 @@ function MLCH_getDocURL($file, $doclang='')
     global $_CONF, $_CONF_MLCH;
 
     if ($doclang == '') $doclang = $_CONF['language'];
-    $doc_path = $_CONF['path_html'] . $_CONF_MLCH['pi_name'] . 
+    $doc_path = $_CONF['path_html'] . $_CONF_MLCH['pi_name'] .
                 "/docs/$doclang/";
     $doc_url = '';
 
@@ -883,50 +881,6 @@ function MLCH_getDocURL($file, $doclang='')
     }
 
     return $doc_url;
-}
-
-
-/**
-*   Log activity to a plugin-specific log file
-*
-*   todo: available in lglib. Perhaps just a wrapper to pass along $pi_name,$msg.
-*   @param string $logentry Text to log
-*/
-function MLCH_auditLog($logentry = '')
-{
-    global $_CONF, $_USER, $LANG01, $_CONF_MLCH;
-
-    if ($logentry == '')
-        return '';
-
-    // A little sanitizing
-    $logentry = str_replace(
-            array('<?', '?>'),
-            array('(@', '@)'),
-            $logentry);
-    $timestamp = strftime( '%c' );
-    $logfile = $_CONF['path_log'] . $_CONF_MLCH['pi_name'] . '.log';
-
-    // Can't open the log file?  Return an error
-    if (!$file = fopen($logfile, 'a')) {
-        COM_errorLog("Unable to open {$_CONF_MLCH['pi_name']}.log");
-        return;
-    }
-
-    // Get the user name if it's not anonymous
-    if (isset($_USER['uid'])) {
-        $byuser = $_USER['uid'] . '-'.
-                COM_getDisplayName($_USER['uid'],
-                    $_USER['username'], $_USER['fullname']);
-    } else {
-        $byuser = 'anon';
-    }
-    $byuser .= '@' . $_SERVER['REMOTE_ADDR'];
-
-    // Write the log entry to the file
-    fputs($file, "$timestamp ($byuser) - $logentry\n");
-    fclose($file);
-
 }
 
 
@@ -950,7 +904,7 @@ function MLCH_syncWithMC($uid)
     $email = MLCH_getEmail($uid);
     USES_mailchimp_class_api();
     $api = new Mailchimp($_CONF_MLCH['api_key']);
-    $out = $api->call('helper/lists-for-email', array('email'=>array('email'=>$email)));
+    $out = $api->listsForEmail($email);
     if (!isset($out['error'])) {
         $lists = array();
         foreach ($out as $list_info) {
@@ -994,7 +948,7 @@ function MLCH_getEmail($uid, $force=false)
 *
 *   @param  integer $uid    User ID
 */
-function MLCH_getMemberInfo($uid)
+function XMLCH_getMemberInfo($uid)
 {
     global $_CONF_MLCH;
     static $info = array();
@@ -1004,6 +958,7 @@ function MLCH_getMemberInfo($uid)
         $info[$uid] = array();
         $email = MLCH_getEmail($uid);
         $params = array(
+            'query' => $email,
             'id' => $_CONF_MLCH['def_list'],
             'emails' => array(
                 array(
@@ -1038,16 +993,15 @@ function MLCH_updateUser($uid, $params, $email='')
     if (!MAILCHIMP_ACTIVE) return true;
 
     if (!isset($params['id'])) $params['id'] = $_CONF_MLCH['def_list'];
-    $params['email'] = array(
-        'email' => empty($email) ? MLCH_getEmail($uid) : $email,
-    );
-    if (!isset($params['merge_vars'])) $params['merge_vars'] = array();
-    // other parameters, merge_vars set by caller
+    $list_id = $params['id'];
+    $params['email_address'] = empty($email) ? MLCH_getEmail($uid) : $email;
+    if (!isset($params['merge_fields'])) $params['merge_fields'] = array();
+    // other parameters and merge_vars set by caller
 
     USES_mailchimp_class_api();
     $api = new Mailchimp($_CONF_MLCH['api_key']);
-    $out = $api->call('lists/update-member', $params);
-    if (isset($out['error'])) {
+    $out = $api->updateMember($email, $list_id, $params);
+    if (!$api->success()) {
         return false;
     }
     return true;
@@ -1062,7 +1016,8 @@ function MLCH_syncCache()
     global $_TABLES, $LANG_MLCH, $_CONF_MLCH;
 
     USES_mailchimp_class_api();
-    $api       = new Mailchimp($_CONF_MLCH['api_key']);
+    $api = new Mailchimp($_CONF_MLCH['api_key']);
+    $list_id = $_CONF_MCH['def_list'];
     $params = array(
         'id' => $_CONF_MLCH['def_list'],
         'opts' => array(
@@ -1073,23 +1028,23 @@ function MLCH_syncCache()
         ),
     );
     $lists = MLCH_getLists();
-    $total_members = $lists[$_CONF_MLCH['def_list']]['member_count'];
+    $total_members = $lists[$list_id]['member'];
     $pages = ceil(($total_members / 100));
     $subscribers = array();
     $sql_values = array();
-    $list_id = DB_escapeString($_CONF_MLCH['def_list']);
+    $list_id = DB_escapeString($list_id);
 
     // Load up an array of subscribers that can be checked with isset()
     for ($i = 0; $i < $pages; $i++) {
-        $mc_status = $api->call('lists/members', $params);
-        if (isset($mc_status['error'])) {
-            return $mc_status['error'];
+        $mc_status = $api->listMembers($list_id, 'subscribed', NULL, $offset, 100);
+        if (!$api->success()) {
+            return __FUNCTION__ . ":: Error requesting list information";
         }
 
-        foreach ($mc_status['data'] as $d) {
-            $subscribers[$d['email']] = 1;
+        foreach ($mc_status['members'] as $d) {
+            $subscribers[$d['email_address']] = 1;
         }
-        $params['opts']['start'] += 100;
+        $offset += 100;
     }
 
     // Now get all the site user accounts and see if their email
@@ -1172,6 +1127,49 @@ function MLCH_debug($msg, $type='debug')
     COM_errorLog('Mailchimp ' . strtoupper($type) . ': ' . $msg);
 }
 
+
+/**
+*   Log activity to a plugin-specific log file
+*
+*   todo: available in lglib. Perhaps just a wrapper to pass along $pi_name,$msg.
+*   @param string $logentry Text to log
+*/
+function MLCH_auditLog($logentry = '')
+{
+    global $_CONF, $_USER, $LANG01, $_CONF_MLCH;
+
+    if ($logentry == '')
+        return '';
+
+    // A little sanitizing
+    $logentry = str_replace(
+            array('<?', '?>'),
+            array('(@', '@)'),
+            $logentry);
+    $timestamp = strftime( '%c' );
+    $logfile = $_CONF['path_log'] . $_CONF_MLCH['pi_name'] . '.log';
+
+    // Can't open the log file?  Return an error
+    if (!$file = fopen($logfile, 'a')) {
+        COM_errorLog("Unable to open {$_CONF_MLCH['pi_name']}.log");
+        return;
+    }
+
+    // Get the user name if it's not anonymous
+    if (isset($_USER['uid'])) {
+        $byuser = $_USER['uid'] . '-'.
+                COM_getDisplayName($_USER['uid'],
+                    $_USER['username'], $_USER['fullname']);
+    } else {
+        $byuser = 'anon';
+    }
+    $byuser .= '@' . $_SERVER['REMOTE_ADDR'];
+
+    // Write the log entry to the file
+    fputs($file, "$timestamp ($byuser) - $logentry\n");
+    fclose($file);
+
+}
 
 require_once MLCH_PI_PATH . 'services.inc.php';
 

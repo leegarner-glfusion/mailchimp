@@ -1,14 +1,13 @@
 <?php
-//  $Id: index.php 25 2010-10-04 17:14:59Z root $
 /**
 *   Webhook url for notifications from Mailchimp
 *   Updates the Mailchimp plugin table with subscriptions and removals,
 *   and also updates the Users table with email address changes.
 *
 *   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2013 Lee Garner <lee@leegarner.com>
+*   @copyright  Copyright (c) 2013-2017 Lee Garner <lee@leegarner.com>
 *   @package    mailchimp
-*   @version    0.0.1
+*   @version    0.1.0
 *   @license    http://opensource.org/licenses/gpl-2.0.php 
 *               GNU Public License v2 or later
 *   @filesource
@@ -31,7 +30,7 @@ if (!empty($_CONF_MLCH['webhook_key']) &&
 
 // MAIN
 $action = isset($_POST['type']) ? $_POST['type'] : '';
-$list_id = isset($_POST['data']['list_id']) ? $_POST['data']['list_id'] : '';
+$list_id = isset($_POST['data']['id']) ? $_POST['data']['id'] : '';
 if (empty($list_id)) {
     MLCH_auditLog('Webhook: invalid or missing list ID');
     exit;
@@ -56,20 +55,19 @@ case 'subscribe':
                  array('email'=>$email), $segment, $msg);
         if ($status == PLG_RET_OK) {
             $memstatus = $segment;
+            $merge_vars['MEMSTATUS'] = $memstatus;  // always update
         }
-        $merge_vars['MEMSTATUS'] = $memstatus;  // always update
         USES_mailchimp_class_api();
         $api = new Mailchimp($_CONF_MLCH['api_key']);
         $params = array(
-            'id' => $list_id,
-            'email' => array('email' => $email),
-            'merge_vars' => $merge_vars,
+            'email' => $email,
+            'merge_fields' => $merge_vars,
         );
-        $status = $api->call('lists/update-member', $params);
+        $status = $api->updateMember($email, $list_id, $params);
         //MLCH_auditLog(print_r($status,true));
-        if (isset($status['error'])) {
+        if (!$api->success()) {
             MLCH_auditLog("Failed to update member status for $email. Error: " .
-            $api->errorMessage);
+            $api->getLastError());
         }
         MLCH_updateCache($uid, $list_id);
         MLCH_auditlog("Webhook $action: $email subscribed to $list_id");
