@@ -61,18 +61,20 @@ function MLCH_importUsers()
     while ($A = DB_fetchArray($result, false)) {
         $status = LGLIB_invokeService('membership', 'mailingSegment',
              array('uid'=>$A['u_uid'], 'email'=>$A['email']), $segment, $msg);
-        $memstatus = $status == PLG_RET_OK ? $segment : '';
         $args = array(
             'email_address' => $A['email'],
-            'status' => 'subscribed',
-            'merge_fields' => array('MEMSTATUS' => $memstatus),
+            'status' => $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed',
         );
+        if ($status == PLG_RET_OK) {
+            // Add member status, only if not empty
+            $args['merge_fields'] = array('MEMSTATUS' => $segment);
+        }
         $mc_status = $api->subscribe($A['email'], $args, $list_id);
-        if ($mc_status['status'] == 'subscribed') {
+        if ($api->success()) {
             $cache_vals[$A['email']] = array('uid' => $A['u_uid'], 'sub' => 0);
             $success++;
         } else {
-            $msg .= $mc_status['detail'] . '<br />' . LB;
+            $msg .= $api->getLastError() . '<br />' . LB;
             $errors++;
         }
     }

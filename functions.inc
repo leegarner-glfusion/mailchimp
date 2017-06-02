@@ -106,6 +106,28 @@ function plugin_chkVersion_mailchimp()
     return $_CONF_MLCH['pi_version'];
 }
 
+
+/**
+*   Adds the plugin to the Admin menu.
+*
+*   @return array   Array(pi_name, admin url, # of items) or '' for none.
+*/
+function plugin_getadminoption_mailchimp() 
+{
+    global $_CONF, $_CONF_MLCH, $LANG_MLCH;
+
+    if (plugin_ismoderator_photocomp()) {
+        $retval = array(
+            $LANG_MLCH['menu_label'],
+            "{$_CONF['site_admin_url']}/plugins/{$_CONF_MLCH['pi_name']}/index.php"
+        );
+    } else {
+        $retval = '';
+    }
+    return $retval;
+}
+
+
 /**
 *   Get the user menu option to control subcriptions
 *
@@ -629,9 +651,11 @@ function MLCH_getLists()
             if (is_array($list_data)) {
                 foreach ($list_data['lists'] as $key => $list) {
                     $members = $api->listMembers($list['id'], 'subscribed', NULL, 0, 0);
-                    $lists[$key]['id']      = $list['id'];
-                    $lists[$key]['name']    = $list['name'];
-                    $lists[$key]['members'] = $members['total_items'];
+                    $lists[$list['id']] = array(
+                        'id' => $list['id'],
+                        'name' => $list['name'],
+                        'members' => $members['total_items'],
+                    );
                 }
             }
         }
@@ -1017,7 +1041,7 @@ function MLCH_syncCache()
 
     USES_mailchimp_class_api();
     $api = new Mailchimp($_CONF_MLCH['api_key']);
-    $list_id = $_CONF_MCH['def_list'];
+    $list_id = $_CONF_MLCH['def_list'];
     $params = array(
         'id' => $_CONF_MLCH['def_list'],
         'opts' => array(
@@ -1028,19 +1052,17 @@ function MLCH_syncCache()
         ),
     );
     $lists = MLCH_getLists();
-    $total_members = $lists[$list_id]['member'];
+    $total_members = $lists[$list_id]['members'];
     $pages = ceil(($total_members / 100));
     $subscribers = array();
     $sql_values = array();
     $list_id = DB_escapeString($list_id);
-
     // Load up an array of subscribers that can be checked with isset()
     for ($i = 0; $i < $pages; $i++) {
         $mc_status = $api->listMembers($list_id, 'subscribed', NULL, $offset, 100);
         if (!$api->success()) {
             return __FUNCTION__ . ":: Error requesting list information";
         }
-
         foreach ($mc_status['members'] as $d) {
             $subscribers[$d['email_address']] = 1;
         }
