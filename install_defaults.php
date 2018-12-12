@@ -1,20 +1,20 @@
 <?php
 /**
-*   Default items for the MailChimp plugin
-*
-*   Initial Installation Defaults used when loading the online configuration
-*   records. These settings are only used during the initial installation
-*   and not referenced any more once the plugin is installed, except when
-*   upgrading
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
-*   @package    mailchimp
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*              GNU Public License v2 or later
-*   @filesource
-*/
+ * Default items for the MailChimp plugin.
+ *
+ * Initial Installation Defaults used when loading the online configuration
+ * records. These settings are only used during the initial installation
+ * and not referenced any more once the plugin is installed, except when
+ * upgrading
+ *
+ * @author     Lee Garner <lee@leegarner.com>
+ * @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
+ * @package    mailchimp
+ * @version    0.0.1
+ * @license    http://opensource.org/licenses/gpl-2.0.php
+ *             GNU Public License v2 or later
+ * @filesource
+ */
 
 if (!defined ('GVERSION')) {
     die('This file can not be used on its own!');
@@ -37,15 +37,14 @@ $_MLCH_DEFAULT = array(
 
 
 /**
-* Initialize MailChimp plugin configuration
-*
-* Creates the database entries for the configuation if they don't already
-* exist. Initial values will be taken from $_CONF_MLCH if available (e.g. from
-* an old config.php), uses $_MLCH_DEFAULT otherwise.
-*
-* @return   boolean     true: success; false: an error occurred
-*
-*/
+ * Initialize MailChimp plugin configuration.
+ *
+ * Creates the database entries for the configuation if they don't already
+ * exist. Initial values will be taken from $_CONF_MLCH if available (e.g. from
+ * an old config.php), uses $_MLCH_DEFAULT otherwise.
+ *
+ * @return  boolean     true: success; false: an error occurred
+ */
 function plugin_initconfig_mailchimp()
 {
     global $_CONF_MLCH, $_MLCH_DEFAULT;

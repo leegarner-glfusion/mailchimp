@@ -1,17 +1,16 @@
 <?php
-//  $Id: index.php 25 2010-10-04 17:14:59Z root $
 /**
-*   Guest-facing entry for the MailChimp plugin.
-*   Allows visitors to subscribe or unsubscribe from any mailing lists.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
-*   @package    mailchimp
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Guest-facing entry for the MailChimp plugin.
+ * Allows visitors to subscribe or unsubscribe from any mailing lists.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2012-2018 Lee Garner <lee@leegarner.com>
+ * @package     mailchimp
+ * @version     v0.0.1
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 require_once '../lib-common.php';
 
@@ -21,9 +20,12 @@ if (!in_array('mailchimp', $_PLUGINS) || !MAILCHIMP_ACTIVE) {
 }
 
 /**
-*   Save an email address.
-*   Gets the address directoy from $_GET.
-*/
+ * Save an email address.
+ * Gets the address directoy from $_GET.
+ *
+ * @param   string  $address    E-mail address
+ * @return  integer     Numeric message ID to display
+ */
 function MLCH_storeAddress($address)
 {
     global $LANG_MLCH, $_CONF_MLCH;
@@ -77,7 +79,7 @@ $expected = array(
     'action', 'sublists',
 );
 foreach($expected as $provided) {
-    // Get requested action and page from GET or POST variables.  
+    // Get requested action and page from GET or POST variables.
     // Most could come in either way.  They are not sanitized, so they must
     // only be used in switch or other conditions.
     if (isset($_POST[$provided])) {

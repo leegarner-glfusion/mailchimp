@@ -1,16 +1,15 @@
 <?php
 /**
-*   Administrative entry point for the MailChimp plugin
-*   No admin function is available
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
-*   @package    mailchimp
-*   @version    0.1.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Administrative entry point for the MailChimp plugin.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2012 Lee Garner <lee@leegarner.com>
+ * @package     mailchimp
+ * @version     v0.1.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 require_once '../../../lib-common.php';
 
@@ -29,12 +28,12 @@ if (!SEC_hasRights('mailchimp.admin')) {
 
 
 /**
-*   Import our current users to our subscriber list.
-*   Only imports users that are not in the cache table
-*   Updates the list segment from the Membership plugin if available.
-*
-*   @return string - success message
-*/
+ * Import our current users to our subscriber list.
+ * Only imports users that are not in the cache table.
+ * Updates the list segment from the Membership plugin if available.
+ *
+ * @return  string  Success or Error message
+ */
 function MLCH_importUsers()
 {
     global $_TABLES, $LANG_MLCH, $_CONF_MLCH;
@@ -56,8 +55,8 @@ function MLCH_importUsers()
     $result = DB_query($sql);
     $list_id = DB_escapeString($_CONF_MLCH['def_list']);
     $cache_vals = array();
-    USES_mailchimp_class_api();
-    $api = new Mailchimp($_CONF_MLCH['api_key']);
+    //USES_mailchimp_class_api();
+    $api = Mailchimp\API::getInstance();
     while ($A = DB_fetchArray($result, false)) {
         $status = LGLIB_invokeService('membership', 'mailingSegment',
              array('uid'=>$A['u_uid'], 'email'=>$A['email']), $segment, $msg);
@@ -99,11 +98,11 @@ function MLCH_importUsers()
 
 
 /**
-*   Create the main menu
-*
-*   @param  string  $explanation    Instruction text
-*   @return string  HTML for menu area
-*/
+ * Create the main menu.
+ *
+ * @param   string  $explanation    Instruction text
+ * @return  string  HTML for menu area
+ */
 function MLCH_adminMenu()
 {
     global $_CONF, $LANG_ADMIN, $LANG_MLCH, $pi_title;
@@ -114,14 +113,20 @@ function MLCH_adminMenu()
 
     $token = SEC_createToken();
     $menu_arr = array(
-        array('url' => MLCH_ADMIN_URL . '?updcache=x',
-              'text' => $LANG_MLCH['sync_cache']),
-        array('url' => MLCH_ADMIN_URL . '?importusers=x',
-              'text' => $LANG_MLCH['import_users']),
-        array('url' => $_CONF['site_admin_url'],
-              'text' => $LANG_ADMIN['admin_home']),
+        array(
+            'url' => MLCH_ADMIN_URL . '?updcache=x',
+            'text' => $LANG_MLCH['sync_cache'],
+        ),
+        array(
+            'url' => MLCH_ADMIN_URL . '?importusers=x',
+            'text' => $LANG_MLCH['import_users'],
+        ),
+        array(
+            'url' => $_CONF['site_admin_url'],
+            'text' => $LANG_ADMIN['admin_home'],
+        ),
     );
-    $retval .= COM_startBlock($pi_title,
+    $retval .= COM_startBlock($pi_title, '',
                 COM_getBlockTemplate('_admin_block', 'header'));
     $retval .= ADMIN_createMenu(
             $menu_arr, $LANG_MLCH['instr_admin'],

@@ -1,16 +1,15 @@
 <?php
-//  $Id: install.php 12 2010-09-13 22:06:32Z root $
 /**
-*   Installation routine for the MailChimp plugin
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
-*   @package    mailchimp
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Installation routine for the MailChimp plugin/
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2012 Lee Garner <lee@leegarner.com>
+ * @package     mailchimp
+ * @version     v0.0.1
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 
 /** Include core glFusion library */

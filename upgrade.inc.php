@@ -1,15 +1,15 @@
 <?php
 /**
-*   Upgrade routines for the Mailchimp plugin
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
-*   @package    mailchimp
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Upgrade routines for the Mailchimp plugin.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2012 Lee Garner <lee@leegarner.com>
+ * @package     mailchimp
+ * @version     v0.0.1
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 // Required to get the config values
 global $_CONF, $_MLCH_CONF, $_DB_dbms;
@@ -19,12 +19,12 @@ require_once dirname(__FILE__) . '/sql/'. $_DB_dbms. '_install.php';
 
 
 /**
-*   Perform the upgrade starting at the current version.
-*   This plugin has no tables but may get new configuration items.
-*
-*   @param  string  $current_ver    Current installed version to be upgraded
-*   @return integer                 Error code, 0 for success
-*/
+ * Perform the upgrade starting at the current version.
+ * This plugin has no tables but may get new configuration items.
+ *
+ * @param   string  $current_ver    Current installed version to be upgraded
+ * @return  integer                 Error code, 0 for success
+ */
 function MLCH_do_upgrade($current_ver)
 {
     global $_MLCH_CONF;
@@ -40,6 +40,11 @@ function MLCH_do_upgrade($current_ver)
 }
 
 
+/**
+ * Upgrade to version 0.3.3.
+ *
+ * @return  boolean     True on success, False on error
+ */
 function MLCH_upgrade_0_0_3()
 {
     global $_TABLES;
@@ -47,7 +52,7 @@ function MLCH_upgrade_0_0_3()
     // Install administration feature and map to existing admin group
     $ft_name = 'mailchimp.admin';
     $ft_desc = 'Mailchimp Administration';
-    DB_query("INSERT INTO {$_TABLES['features']} (ft_name, ft_descr) 
+    DB_query("INSERT INTO {$_TABLES['features']} (ft_name, ft_descr)
             VALUES ('$ft_name', '$ft_desc')", 1);
     if (DB_error()) {
         COM_errorLog("Upgrade: Mailchimp feature creation failed!");
@@ -59,7 +64,7 @@ function MLCH_upgrade_0_0_3()
     if ($grp_id > 0) {
         DB_query("INSERT INTO {$_TABLES['access']} (acc_ft_id, acc_grp_id)
             VALUES ($ft_id, $grp_id)", 1);
-    } 
+    }
     if (DB_error()) {
         COM_errorLog("upgrade: Mailchimp feature mapping failed!");
         return 1;
@@ -75,13 +80,13 @@ function MLCH_upgrade_0_0_3()
 
 
 /**
-*   Actually perform any sql updates.
-*   If there are no SQL statements, then SUCCESS is returned.
-*
-*   @param  string  $version    Version being upgraded TO
-*   @param  array   $sql        Array of SQL statement(s) to execute
-*   @return integer             0 for success, >0 for failure
-*/
+ * Actually perform any sql updates.
+ * If there are no SQL statements, then SUCCESS is returned.
+ *
+ * @param   string  $version    Version being upgraded TO
+ * @param   array   $sql        Array of SQL statement(s) to execute
+ * @return  boolean     True on success, False on failure
+ */
 function MLCH_do_upgrade_sql($version = 'Undefined', $sql='')
 {
     global $_TABLES, $_CONF_MLCH, $_MLCH_UPGRADE_SQL;
@@ -91,7 +96,7 @@ function MLCH_do_upgrade_sql($version = 'Undefined', $sql='')
     // Execute a single SQL query, if supplied.
     if (!empty($sql)) {
         DB_query($sql, 1);
-        return DB_error() ? 1 : 0;
+        return DB_error() ? false : true;
     }
 
     // We control this, so it shouldn't happen, but just to be safe...
@@ -101,9 +106,9 @@ function MLCH_do_upgrade_sql($version = 'Undefined', $sql='')
     }
 
     // If no sql statements passed in, return success
-    if (!isset($_MLCH_UPGRADE_SQL[$version]) || 
+    if (!isset($_MLCH_UPGRADE_SQL[$version]) ||
             !is_array($_MLCH_UPGRADE_SQL[$version]))
-        return 0;
+        return true;
 
     // Execute SQL now to perform the upgrade
     foreach ($_MLCH_UPGRADE_SQL[$version] as $sql) {
@@ -111,13 +116,11 @@ function MLCH_do_upgrade_sql($version = 'Undefined', $sql='')
         DB_query($sql, '1');
         if (DB_error()) {
             COM_errorLog("SQL Error during Mailchimp plugin update",1);
-            return 1;
+            return false;
             break;
         }
     }
-
-    return 0;
-
+    return true;
 }
 
 ?>

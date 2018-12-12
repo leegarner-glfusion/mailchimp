@@ -1,16 +1,15 @@
 <?php
 /**
-*   Table definitions and other static config variables.
-*   This plugin does not use any database tables.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012-2017 Lee Garner <lee@leegarner.com>
-*   @package    mailchimp
-*   @version    0.1.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Table definitions and other static config variables.
+ *
+ * @author     Lee Garner <lee@leegarner.com>
+ * @copyright  Copyright (c) 2012-2017 Lee Garner <lee@leegarner.com>
+ * @package    mailchimp
+ * @version    0.1.0
+ * @license    http://opensource.org/licenses/gpl-2.0.php 
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 /**
 *   Global configuration array

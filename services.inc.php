@@ -1,17 +1,17 @@
 <?php
 /**
-*   Service functions for the Mailchimp plugin.
-*   This file provides functions to be called by other plugins, such
-*   as the PayPal plugin.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
-*   @package    mailchimp
-*   @version    0.0.1
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Service functions for the Mailchimp plugin.
+ * This file provides functions to be called by other plugins, such
+ * as the PayPal plugin.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2012 Lee Garner <lee@leegarner.com>
+ * @package     mailchimp
+ * @version     v0.0.1
+ * @license     http://opensource.org/licenses/gpl-2.0.php 
+ *             GNU Public License v2 or later
+ * @filesource
+ */
 
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own!');
@@ -19,13 +19,13 @@ if (!defined ('GVERSION')) {
 
 
 /**
-*   Subscribe a user to the specifiec or default mailing list
-*
-*   @param  array   $A          Elements for subscription (uid, listid, email)
-*   @param  array   &$output    Not used
-*   @param  array   &$svc_msg   Not used
-*   @return integer             PLG_RET_status
-*/
+ * Subscribe a user to the specifiec or default mailing list
+ *
+ * @param   array   $A          Elements for subscription (uid, listid, email)
+ * @param   array   &$output    Not used
+ * @param   array   &$svc_msg   Not used
+ * @return  integer             PLG_RET_status
+ */
 function service_subscribe_mailchimp($A, &$output, &$svc_msg)
 {
     global $_USER;
@@ -47,6 +47,14 @@ function service_subscribe_mailchimp($A, &$output, &$svc_msg)
 }
 
 
+/**
+ * Unsubscribe a user from a mailing list.
+ *
+ * @param   array   $A      Arguments
+ * @param   mixed   $output Variable to receive output
+ * @param   string  $svc_msg    Not used
+ * @return      Plugin return code
+ */
 function service_unsubscribe_mailchimp($A, &$output, &$svc_msg)
 {
     global $_USER;
@@ -61,6 +69,15 @@ function service_unsubscribe_mailchimp($A, &$output, &$svc_msg)
     return $retval;
 }
 
+
+/**
+ * Push a user update from glFusion to Mailchimp.
+ *
+ * @param   array   $A      Arguments
+ * @param   mixed   $output Variable to receive output
+ * @param   string  $svc_msg    Not used
+ * @return      Plugin return code
+ */
 function service_updateuser_mailchimp($A, &$output, &$svc_msg)
 {
     global $_USER;
@@ -77,6 +94,15 @@ function service_updateuser_mailchimp($A, &$output, &$svc_msg)
     return $retval;
 }
 
+
+/**
+ * Check if a user is subscribed to a mailing list.
+ *
+ * @param   array   $A      Arguments
+ * @param   mixed   $output Variable to receive output
+ * @param   string  $svc_msg    Not used
+ * @return      Plugin return code
+ */
 function service_issubscribed_mailchimp($A, &$output, &$svc_msg)
 {
     global $_CONF_MLCH;
