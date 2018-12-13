@@ -1,16 +1,16 @@
 <?php
 /**
-*   Ajax functions for the Mailchimp plugin
-*   Allows visitors to subscribe or unsubscribe from any mailing lists.
-*
-*   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012-2013 Lee Garner <lee@leegarner.com>
-*   @package    mailchimp
-*   @version    0.1.0
-*   @license    http://opensource.org/licenses/gpl-2.0.php 
-*               GNU Public License v2 or later
-*   @filesource
-*/
+ * Ajax functions for the Mailchimp plugin.
+ * Allows visitors to subscribe or unsubscribe from any mailing lists.
+ *
+ * @author      Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2012-2013 Lee Garner <lee@leegarner.com>
+ * @package     mailchimp
+ * @version     v0.1.0
+ * @license     http://opensource.org/licenses/gpl-2.0.php
+ *              GNU Public License v2 or later
+ * @filesource
+ */
 
 require_once '../lib-common.php';
 
@@ -26,7 +26,7 @@ $expected = array(
     'action', 'sublists',
 );
 foreach($expected as $provided) {
-    // Get requested action and page from GET or POST variables.  
+    // Get requested action and page from GET or POST variables.
     // Most could come in either way.  They are not sanitized, so they must
     // only be used in switch or other conditions.
     if (isset($_POST[$provided])) {

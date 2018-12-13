@@ -253,6 +253,15 @@ class API
         return $this->get("lists/$list_id/members");
     }
 
+
+    /**
+     * Get an array of mailing lists visible to this API key.
+     *
+     * @param   array   $fields     Fields to retrieve
+     * @param   integer $offset     First record offset, for larget datasets
+     * @param   integer $count      Number of items to return
+     * @return  array       Array of list data
+     */
     public function lists($fields=array(), $offset=0, $count=25)
     {
         $params = array(
@@ -263,6 +272,16 @@ class API
         return $this->get('lists', $params);
     }
 
+
+    /**
+     * Get an array of lists for which a specific email address is subscribed.
+     *
+     * @param   string  $email      Email address
+     * @param   array   $fields     Fields to retrieve
+     * @param   integer $offset     First record offset, for larget datasets
+     * @param   integer $count      Number of items to return
+     * @return  array       Array of list data
+     */
     public function listsForEmail($email, $fields=array(), $offset=0, $count=25)
     {
         if (empty($fields)) {
@@ -278,11 +297,18 @@ class API
     }
 
 
+    /**
+     * Unsubscribe an email address from one or more lists.
+     *
+     * @param   string  $email      Email address
+     * @param   array   $lists      Array of list IDs
+     * @return  boolean     True on success, False on error
+     */
     public function unsubscribe($email, $lists=array())
     {
         $status = false;
         if (!is_array($lists)) $lists = array($lists);
-        if (empty($lists)) return true;
+        if (empty($lists)) return true;     // no lists specified, consider success
         $email = $this->subscriberhash($email);
         foreach ($lists as $list_id) {
             $status = $this->delete("/lists/$list_id/members/$email");
@@ -290,16 +316,33 @@ class API
         return $status;
     }
 
+
+    /**
+     * Subscribe an email address to one or more lists.
+     *
+     * @param   string  $email      Email address
+     * @param   array   $args       Array of additional args to supply
+     * @param   array   $lists      Array of list IDs
+     * @return  boolean     True on success, False on error
+     */
     public function subscribe($email, $args=array(), $lists=array())
     {
         if (!is_array($lists)) $lists = array($lists);
         if (empty($lists)) return true;
         if (!isset($args['email_address'])) $args['email_address'] = $email;
         foreach ($lists as $list_id) {
-            return $this->post("/lists/$list_id/members/", $args);
+            $status = $this->post("/lists/$list_id/members/", $args);
         }
+        return $status;
     }
 
+
+    /**
+     * Get information about a specific member by email address.
+     *
+     * @param   string  $email      Email address
+     * @return  array       Array of member information
+     */
     public function memberInfo($email)
     {
         $params = array(
@@ -308,6 +351,15 @@ class API
         return $this->get('/search-members', $params);
     }
 
+
+    /**
+     * Update the member information for a specific email and list.
+     *
+     * @param   string  $email      Email address
+     * @param   string  $list_id    Mailing List ID
+     * @param   array   $params     Array of parameters to update
+     * @return      True on success, False on failure
+     */
     public function updateMember($email, $list_id, $params=array())
     {
         $hash = $this->subscriberHash($email);
@@ -316,10 +368,12 @@ class API
 
 
     /**
-     * Call an API method. Every request needs the API key, so that is added automatically -- you don't need to pass it in.
-     * @param  string $method The API method to call, e.g. 'lists/list'
-     * @param  array  $args   An array of arguments to pass to the method. Will be json-encoded for you.
-     * @return array          Associative array of json decoded API response.
+     * Call an API method.
+     * Every request needs the API key, so that is added automatically -- you don't need to pass it in.
+     *
+     * @param  string   $method The API method to call, e.g. 'lists/list'
+     * @param  array    $args   An array of arguments to pass to the method. Will be json-encoded for you.
+     * @return array            Associative array of json decoded API response.
      */
     public function call($method, $args=array())
     {
@@ -329,12 +383,13 @@ class API
 
     /**
      * Performs the underlying HTTP request. Not very exciting.
-     * @param  string $http_verb The HTTP verb to use: get, post, put, patch, delete
-     * @param  string $method The API method to be called
-     * @param  array $args Assoc array of parameters to be passed
-     * @param int $timeout
-     * @return array|false Assoc array of decoded result
-     * @throws \Exception
+     *
+     * @param   string  $http_verb  The HTTP verb to use: get, post, put, patch, delete
+     * @param   string  $method     The API method to be called
+     * @param   array   $args       Assoc array of parameters to be passed
+     * @param   integer $timeout    Request timeout
+     * @return  array|false Assoc array of decoded result
+     * @throws  \Exception
      */
     private function makeRequest($http_verb, $method, $args = array(), $timeout = self::TIMEOUT)
     {
@@ -402,11 +457,13 @@ class API
     }
 
     /**
-    * @param string $http_verb
-    * @param string $method
-    * @param string $url
-    * @param integer $timeout
-    */
+     * Prepare local variables to receive data from the HTTP request.
+     *
+     * @param   string  $http_verb  HTTP verb (GET, POST, etc.)
+     * @param   string  $method     API method being called
+     * @param   string  $url        API Endpoint url, including $method
+     * @param   integer $timeout    Request timeout in seconds
+     */
     private function prepareStateForRequest($http_verb, $method, $url, $timeout)
     {
         $this->last_error = '';
@@ -437,8 +494,8 @@ class API
      * rel names it contains. The original value is available under
      * the "_raw" key.
      * 
-     * @param string $headersAsString
-     * @return array
+     * @param   string  $headersAsString    Header string
+     * @return  array       Headers as an associative array
      */
     private function getHeadersAsArray($headersAsString)
     {
@@ -469,16 +526,17 @@ class API
         return $headers;
     }
 
+
     /**
-     * Extract all rel => URL pairs from the provided Link header value
+     * Extract all rel => URL pairs from the provided Link header value.
      * 
      * Mailchimp only implements the URI reference and relation type from
      * RFC 5988, so the value of the header is something like this:
      * 
      * 'https://us13.api.mailchimp.com/schema/3.0/Lists/Instance.json; rel="describedBy", <https://us13.admin.mailchimp.com/lists/members/?id=XXXX>; rel="dashboard"'
      * 
-     * @param string $linkHeaderAsString
-     * @return array
+     * @param   string  $linkHeaderAsString     Rel-type header as a string
+     * @return  array       Associative array of the Rel header
      */
     private function getLinkHeaderAsArray($linkHeaderAsString)
     {
@@ -493,10 +551,12 @@ class API
         return $urls;
     }
 
+
     /**
-     * Encode the data and attach it to the request
-     * @param   resource $ch cURL session handle, used by reference
-     * @param   array $data Assoc array of data to attach
+     * Encode the data and attach it to the request.
+     *
+     * @param   resource    $ch     cURL session handle, used by reference
+     * @param   array       $data   Assoc array of data to attach
      */
     private function attachRequestPayload(&$ch, $data)
     {
@@ -505,10 +565,12 @@ class API
         curl_setopt($ch, CURLOPT_POSTFIELDS, $encoded);
     }
 
+
     /**
-     * Decode the response and format any error messages for debugging
-     * @param array $response The response from the curl request
-     * @return array|false    The JSON decoded into an array
+     * Decode the response and format any error messages for debugging.
+     *
+     * @param   array   $response   The response from the curl request
+     * @return  array|false    The JSON decoded into an array
      */
     private function formatResponse($response)
     {
@@ -522,10 +584,12 @@ class API
     }
 
     /**
-     * Do post-request formatting and setting state from the response
-     * @param array $response The response from the curl request
-     * @param string $responseContent The body of the response from the curl request
-     * * @return array    The modified response
+     * Do post-request formatting and setting state from the response.
+     *
+     * @param   array   $response       The response from the curl request
+     * @param   string  $responseContent The body of the response from the curl request
+     * @param   reference   $ch         Curl handler
+     * @return  array    The modified response
      */
     private function setResponseState($response, $responseContent, $ch)
     {
@@ -548,10 +612,11 @@ class API
 
     /**
      * Check if the response was successful or a failure. If it failed, store the error.
-     * @param array $response The response from the curl request
-     * @param array|false $formattedResponse The response body payload from the curl request
-     * @param int $timeout The timeout supplied to the curl request.
-     * @return bool     If the request was successful
+     *
+     * @param   array   $response   The response from the curl request
+     * @param   array|false $formattedResponse  The response body payload from the curl request
+     * @param   integer $timeout    The timeout supplied to the curl request.
+     * @return  boolean     If the request was successful
      */
     private function determineSuccess($response, $formattedResponse, $timeout)
     {
@@ -577,10 +642,11 @@ class API
     }
 
     /**
-     * Find the HTTP status code from the headers or API response body
-     * @param array $response The response from the curl request
-     * @param array|false $formattedResponse The response body payload from the curl request
-     * @return int  HTTP status code
+     * Find the HTTP status code from the headers or API response body.
+     *
+     * @param   array   $response   The response from the curl request
+     * @param   array|false $formattedResponse  The response body payload from the curl request
+     * @return  integer     HTTP status code
      */
     private function findHTTPStatus($response, $formattedResponse)
     {
@@ -595,4 +661,5 @@ class API
         return 418;
     }
 }
+
 ?>
