@@ -13,4 +13,4 @@ the Membership plugin if it is installed.
 
 ## Included Modules
 - Mailchimp API class by Drew McLellan <drew.mclellan@gmail.com>
-- https://apidocs.mailchimp.com/api/downloads/
+  - https://apidocs.mailchimp.com/api/downloads/

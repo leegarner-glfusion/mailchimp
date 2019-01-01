@@ -31,6 +31,7 @@ $LANG_MLCH = array(
     'dbl_optin_required' => 'Double-opt-in required',
     'no_dbl_optin' => 'No Doublie-opt-in',
     'instr_admin' => 'Sync Cache: update all local users in the cache table with MailChimp status.<br />Import Users: subscribe all local users to the default list, double-optin required.',
+    'submit' => 'Submit',
 );
 
 

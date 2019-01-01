@@ -3,7 +3,7 @@
 *   English language strings for the MailChimp plugin
 *
 *   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
+*   @copyright  Copyright (c) 2012-2018 Lee Garner <lee@leegarner.com>
 *   @package    mailchimp
 *   @version    0.0.1
 *   @license    http://opensource.org/licenses/gpl-2.0.php 
@@ -15,10 +15,12 @@
 global $LANG32;
 
 $LANG_MLCH = array(
+    'menu_label' => 'Mailchimp',
     'adminhome' => 'Admin Home',
     'sync_cache' => 'Sync Cache',
     'import_users' => 'Import Users',
     'subscribe_to_list' => 'Subscribe to Mailing List',
+    'subscribed' => 'Subscribed to Mailing List',
     'hlp_sub_checkbox' => 'Check here to subscribe to our mailing list',
     'block_title' => 'Mailing List',
     'block_button_text' => 'Sign Up',

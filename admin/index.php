@@ -58,8 +58,14 @@ function MLCH_importUsers()
     //USES_mailchimp_class_api();
     $api = Mailchimp\API::getInstance();
     while ($A = DB_fetchArray($result, false)) {
-        $status = LGLIB_invokeService('membership', 'mailingSegment',
-             array('uid'=>$A['u_uid'], 'email'=>$A['email']), $segment, $msg);
+        $status = PLG_invokeService('membership', 'mailingSegment',
+            array(
+                'uid'   => $A['u_uid'],
+                'email' => $A['email'],
+            ),
+            $segment,
+            $msg
+        );
         $args = array(
             'email_address' => $A['email'],
             'status' => $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed',

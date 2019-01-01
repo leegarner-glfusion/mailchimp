@@ -1,13 +1,13 @@
 <?php
 /**
- * Webhook url for notifications from Mailchimp
+ * Webhook url for notifications from Mailchimp.
  * Updates the Mailchimp plugin table with subscriptions and removals,
  * and also updates the Users table with email address changes.
  *
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2013-2017 Lee Garner <lee@leegarner.com>
  * @package     mailchimp
- * @version     0.1.0
+ * @version     v0.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -35,9 +35,6 @@ if (empty($list_id)) {
     MLCH_auditLog('Webhook: invalid or missing list ID');
     exit;
 }
-    COM_errorLog("**** BEGIN HOOK DATA *****");
-    COM_errorLog(print_r($_POST, true));
-    COM_errorLog("**** END HOOK DATA *****");
 
 switch ($action) {
 case 'subscribe':
@@ -54,8 +51,13 @@ case 'subscribe':
         // This wouldn't be updated by subscriptions via Mailchimp form.
         $merge_vars = array();
         $memstatus = '';
-        $status = LGLIB_invokeService('membership', 'mailingSegment',
-                 array('email'=>$email), $segment, $msg);
+        $status = PLG_invokeService('membership', 'mailingSegment',
+            array(
+                'email' => $email,
+            ),
+            $segment,
+            $msg
+        );
         if ($status == PLG_RET_OK) {
             $memstatus = $segment;
             $merge_vars['MEMSTATUS'] = $memstatus;  // always update

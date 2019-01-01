@@ -2,18 +2,13 @@
 <p id="MLCH_form_text">{block_text}</p>
 <form id="MLCH_form">
 {!if 0}
-    <input type="text" name="fname" value="First Name" id="fname" 
-        onfocus="if (this.value=='First Name') this.value='';" 
-        onblur="if (this.value=='') this.value='First Name';" />
-    <input type="text" name="lname" value="Last Name" id="lname" 
-        onfocus="if (this.value=='Last Name') this.value='';" 
-        onblur="if (this.value=='') this.value='Last Name';" />
+    <input type="text" name="fname" id="fname" placeholder="First Name" />
+    <input type="text" name="lname" id="lname" placeholder="Last Name" />
 {!endif}
-    <input type="text" name="email" value="email" id="email" 
-        onfocus="if (this.value=='email') this.value='';" 
-        onblur="if (this.value=='') this.value='email';" />
-    <input type="submit" class="lgButton orange" 
-        value="{$LANG_MLCH['block_button_text']}" />
+    <input type="text" name="email" id="email"  placeholder="Email" />
+    <button type="submit" class="uk-button uk-button-primary uk-button-mini">
+        {$LANG_MLCH['block_button_text']}
+    </button>
 </form>
 <div id="mlch_sub_response">&nbsp;</div>
 

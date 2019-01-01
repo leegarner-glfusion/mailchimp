@@ -6,7 +6,7 @@
  * @author      Lee Garner <lee@leegarner.com>
  * @copyright   Copyright (c) 2012-2018 Lee Garner <lee@leegarner.com>
  * @package     mailchimp
- * @version     v0.0.1
+ * @version     v0.1.0
  * @license     http://opensource.org/licenses/gpl-2.0.php
  *              GNU Public License v2 or later
  * @filesource
@@ -16,9 +16,13 @@ if (!defined ('GVERSION')) {
     die('This file can not be used on its own.');
 }
 
+/** Define a numeric value for Debug-level logging */
 define(MLCH_DEBUG, 1);
+/** Define a numeric value for Informational logging */
 define(MLCH_INFO, 2);
+/** Define a numeric value for Warning-level logging */
 define(MLCH_WARN, 4);
+/** Define a numeric value for Critical error logging */
 define(MLCH_CRIT, 8);
 
 /** Language file include */
@@ -49,7 +53,6 @@ if (!isset($_CONF_MLCH['confirm_period'])) {
 if ($_CONF_MLCH['def_list'][0] == 'x') {
     $_CONF_MLCH['def_list'] = substr($_CONF_MLCH['def_list'], 1);
 }
-$_CONF_MLCH['_is_uikit'] = $_SYSTEM['framework'] == 'uikit' ? true : false;
 
 require_once __DIR__ . '/mailchimp.php';
 if (is_file(__DIR__ . '/config.php')) {
@@ -58,10 +61,15 @@ if (is_file(__DIR__ . '/config.php')) {
 
 // Set a flag to indicate that an API key has been entered. If not, we
 // don't want to call the MC API just to get errors.
+/** Indicator that the Mailchimp plugin is active */
 define(MAILCHIMP_ACTIVE, empty($_CONF_MLCH['api_key']) ? 0 : 1);
+/** Guest-facing plugin URL */
 define(MLCH_URL, $_CONF['site_url'] . '/' . $_CONF_MLCH['pi_name']);
+/** Admin-facing plugin URL */
 define(MLCH_ADMIN_URL, $_CONF['site_admin_url'] . '/plugins/' .
         $_CONF_MLCH['pi_name']);
+/** Define the path to the plugin. */
+define(MLCH_PI_PATH, __DIR__);
 
 spl_autoload_register(function($class)
 {
@@ -200,6 +208,7 @@ function plugin_user_login_mailchimp($uid)
  */
 function Xplugin_profileedit_mailchimp($uid, $panel, $fieldset)
 {
+    echo "here";die;
     // prototype to manage interest groups
     global $_TABLES, $_CONF_MLCH;
 
@@ -281,8 +290,7 @@ function plugin_profileedit_mailchimp($uid, $panel, $fieldset)
         }
 
         $T = new Template(__DIR__ . '/templates/');
-        $tpl = $_CONF_MLCH['_is_uikit'] ? 'profile.uikit.thtml' : 'profile.thtml';
-        $T->set_file('profile', $tpl);
+        $T->set_file('profile', 'profile.thtml');
         // Set the template vars. mailchimp_prev_check is used when saving to
         // track whether the variable changes before calling the API
         $T->set_var(array(
@@ -327,8 +335,8 @@ function plugin_user_changed_mailchimp($uid)
         MLCH_unsubscribe($uid, $_POST['email']);
     }
     // Get the existing email address to update Mailchimp
-    $fname = LGLib\NameParser::F($_POST['fullname']);
-    $lname = LGLib\NameParser::L($_POST['fullname']);
+    $fname = \LGLib\NameParser::F($_POST['fullname']);
+    $lname = \LGLib\NameParser::L($_POST['fullname']);
     MLCH_updateUser($uid,
         array(
             'merge_vars' => array(
@@ -386,11 +394,77 @@ function plugin_itemdeleted_mailchimp($id, $type)
 {
     global $_TABLES;
 
+    return;     // LGLib dependency no longer a factor
+
     // If the lgLib plugin is disabled or removed, disable thie plugin
     if ($type == 'lglib' && $id == '*') {
         plugin_enablestatechange_mailchimp(false);
         DB_change($_TABLES['plugins'], 'pi_enabled', 0, 'pi_name', 'mailchimp');
     }
+}
+
+
+function plugin_userchanged_mailchimp($uid)
+{
+    echo "here";die;
+}
+
+
+/**
+ * Get information from other plugins when an item is saved.
+ *
+ * @param   string  $id     Item ID
+ * @param   string  $type   Item Type
+ * @param   string  $old_id Original ID in case of ID change
+ */
+function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
+{
+    $A = explode(':', $type);
+    $type = $A[0];  // plugin name
+    $subtype = isset($A[1]) ? $A[1] : '';   // plugin item type, if any
+
+    $info = PLG_getItemInfo(
+        $type, $id,
+        'id,uid,list_segment,email,fullname',
+        0,
+        array(
+            'subtype' => $subtype,
+        )
+    );
+    //var_dump($info);die;
+    if ($info !== NULL && !empty($info['list_segment'])) {       // got some information
+        $lists = MLCH_listsByUid($id);
+        $params = array(
+            'merge_fields' => array(
+                'MEMSTATUS' => $info['list_segment'],
+            )
+        );
+        foreach ($lists as $L) {
+            MLCH_updateUser($uid, $params, $info['email']);
+        }
+    }
+}
+
+
+/**
+ * Get all the lists to which a user is subscribed, from the cache.
+ *
+ * @param   integer $uid    User ID
+ * @return  array       Array of list IDs
+ */
+function MLCH_listsByUid($uid)
+{
+    global $_TABLES;
+
+    $uid = (int)$uid;
+    $sql = "SELECT list FROM {$_TABLES['mailchimp_cache']}
+        WHERE uid = $uid AND subscribed = 1";
+    $res = DB_query($sql);
+    $retval = array();
+    while ($A = DB_fetchArray($res, false)) {
+        $retval[] = $A['list'];
+    }
+    return $retval;
 }
 
 
@@ -552,46 +626,8 @@ function plugin_geticon_mailchimp()
  */
 function plugin_upgrade_mailchimp()
 {
-    global $_TABLES, $_CONF_MLCH;
-
-    $pi_name = $_CONF_MLCH['pi_name'];
-
-    // Get the current version from the database, compare to the current code
-    $current_ver = DB_getItem($_TABLES['plugins'], 'pi_version',
-        "pi_name = '$pi_name'");
-    if (!$current_ver) {
-        COM_errorLog("Error getting the $pi_name Plugin version",1);
-        return '3';
-    }
-
-    // if we're at the current version, what are we doing here?
-    if ($current_ver >= $_CONF_MLCH['pi_version']) {
-        COM_errorLog("Current version $current_ver is already up to date");
-        return '6';
-    }
-
-    // If we're still here, import the upgrade functions.
     require_once __DIR__ . '/upgrade.inc.php';
-    $error = MLCH_do_upgrade($current_ver);
-    if ($error) {
-        COM_errorLog("Error updating the $pi_name Plugin version",1);
-        return '4';
-    }
-
-    // now update the current version number.
-    DB_query("UPDATE {$_TABLES['plugins']} SET
-            pi_version = '{$_CONF_MLCH['pi_version']}',
-            pi_gl_version = '{$_CONF_MLCH['gl_version']}',
-            pi_homepage = '{$_CONF_MLCH['pi_url']}'
-       WHERE pi_name = '$pi_name'");
-
-    if (DB_error()) {
-        COM_errorLog("Error updating the $pi_name Plugin version",1);
-        return '5';
-    } else {
-        COM_errorLog("Succesfully updated the $pi_name Plugin!",1);
-        return true;
-    }
+    return MLCH_do_upgrade();
 }
 
 
@@ -621,6 +657,8 @@ function plugin_configmanager_select_def_list_mailchimp()
 /**
  * Get the URL to the localized configuration help file.
  *
+ * @param   string  $option     Help option to display
+ * @param   string  $doclang    Language string, default=English
  * @return  array   Array of (url, window_type)
  */
 function plugin_getconfigelementhelp_mailchimp($option, $doclang='english')
@@ -651,6 +689,17 @@ function plugin_user_move_mailchimp($origUID, $destUID)
 
     DB_query("UPDATE {$_TABLES['mailchimp_cache']}
             SET uid = $destUID WHERE uid = $origUID", 1);
+}
+
+
+/**
+ * Return true to enable service functions.
+ *
+ * @return  boolean     True to enable web service functions
+ */
+function plugin_wsEnabled_mailchimp()
+{
+    return true;
 }
 
 
@@ -691,6 +740,7 @@ function MLCH_getLists()
  * Get the Mailchimp groups for a specific list.
  * Holds groups in a static variable to save API calls.
  *
+ * @param   string  $list_id    ID of list
  * @return  mixed   Array of lists, or false on failure
  */
 function XMLCH_getGroups($list_id='')
@@ -774,16 +824,20 @@ function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
     // Get the membership status of this subscriber from the Membership
     // plugin, if available. This goes into the merge_vars to segment the
     // list by current, former and nonmember status
-    $memstatus = '';
-    $status = LGLIB_invokeService('membership', 'mailingSegment',
-             array('uid'=>$uid, 'email'=>$email), $segment, $msg);
+    $status = PLG_invokeService('membership', 'mailingSegment',
+        array(
+            'uid'=>$uid,
+            'email'=>$email,
+        ),
+        $segment,
+        $msg
+    );
     if ($status == PLG_RET_OK) {
-        $memstatus = $segment;
-        $merge_vars['MEMSTATUS'] = $memstatus;  // always update
+        $merge_vars['MEMSTATUS'] = $segment;    // always update
     }
 
     // Process Subscription
-    $api = Mailchimp\API::getInstance();
+    $api = \Mailchimp\API::getInstance();
     $params = array(
         'id' => $list,
         'email_address' => $email,
@@ -813,6 +867,7 @@ function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
 /**
  * Remove a single email address from our list.
  *
+ * @param   integer $uid    User ID to unsubscribe
  * @param   string  $email  Email address to remove
  * @param   string  $list   Mailing list being removed. Defaults to def_list
  * @return  boolean         True on success, False on error or plugin inactive
@@ -1207,7 +1262,7 @@ function MLCH_debug($msg, $type='debug')
 /**
  * Log activity to a plugin-specific log file.
  *
- * todo: available in lglib. Perhaps just a wrapper to pass along $pi_name,$msg.
+ * @todo    available in lglib. Perhaps just a wrapper to pass along $pi_name,$msg.
  * @param string $logentry Text to log
  */
 function MLCH_auditLog($logentry = '')
