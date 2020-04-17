@@ -421,26 +421,25 @@ class Subscriber
             // the local db)
             if (!empty($fname)) $merge_vars['FNAME'] = $fname;
             if (!empty($lname)) $merge_vars['LNAME'] = $lname;
+            // Get the membership status of this subscriber from the Membership
+            // plugin, if available. This goes into the merge_vars to segment the
+            // list by current, former and nonmember status
+            $status = PLG_invokeService('membership', 'mailingSegment',
+                array(
+                    'uid' => $uid,
+                    'email' => $email,
+                ),
+                $segment,
+                $msg
+            );
+            if ($status == PLG_RET_OK) {
+                $merge_vars['MEMSTATUS'] = $segment;    // always update
+            }
         } else {
             // Anonymous user. No merge vars available, and must have valid email.
             $merge_vars = NULL;
         }
         if (empty($email)) return false;    // Can't have an empty email address
-
-        // Get the membership status of this subscriber from the Membership
-        // plugin, if available. This goes into the merge_vars to segment the
-        // list by current, former and nonmember status
-        $status = PLG_invokeService('membership', 'mailingSegment',
-            array(
-                'uid' => $uid,
-                'email' => $email,
-            ),
-            $segment,
-            $msg
-        );
-        if ($status == PLG_RET_OK) {
-            $merge_vars['MEMSTATUS'] = $segment;    // always update
-        }
 
         // Process Subscription
         $api = API::getInstance();
