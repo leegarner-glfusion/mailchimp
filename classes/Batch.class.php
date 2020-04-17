@@ -1,12 +1,15 @@
 <?php
-
+/**
+ * Mailchimp batch operation.
+ */
 //namespace DrewM\MailChimp;
+namespace Mailchimp;
 
 /**
  * A MailChimp Batch operation.
  * http://developer.mailchimp.com/documentation/mailchimp/reference/batches/
  *
- * @author Drew McLellan <drew.mclellan@gmail.com>
+ * @author  Drew McLellan <drew.mclellan@gmail.com>
  */
 class Batch
 {
@@ -15,7 +18,7 @@ class Batch
     private $operations = array();
     private $batch_id;
 
-    public function __construct(MailChimp $MailChimp, $batch_id = null)
+    public function __construct(API $MailChimp, $batch_id = null)
     {
         $this->MailChimp = $MailChimp;
         $this->batch_id = $batch_id;

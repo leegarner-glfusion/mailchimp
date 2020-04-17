@@ -61,10 +61,10 @@ class API
     public function __construct($api_key, $api_endpoint = null)
     {
         $this->api_key = $api_key;
-        
+
         if ($api_endpoint === null) {
             if (strpos($this->api_key, '-') === false) {
-                throw new \Exception("Invalid MailChimp API key `{$api_key}` supplied.");
+                throw new \Exception("Invalid MailChimp API key supplied.");
             }
             list(, $data_center) = explode('-', $this->api_key);
             $this->api_endpoint  = str_replace('<dc>', $data_center, $this->api_endpoint);
@@ -101,7 +101,7 @@ class API
      */
     public function new_batch($batch_id = null)
     {
-        require_once dirname(__FILE__) . '/Batch.class.php';
+        //require_once dirname(__FILE__) . '/Batch.class.php';
         return new Batch($this, $batch_id);
     }
 
@@ -330,8 +330,10 @@ class API
         if (!is_array($lists)) $lists = array($lists);
         if (empty($lists)) return true;
         if (!isset($args['email_address'])) $args['email_address'] = $email;
+        $hash = $this->subscriberhash($email);
         foreach ($lists as $list_id) {
             $status = $this->post("/lists/$list_id/members/", $args);
+            //$status = $this->put("/lists/$list_id/members/$hash", $args);
         }
         return $status;
     }
@@ -443,7 +445,7 @@ class API
                 $this->attachRequestPayload($ch, $args);
                 break;
         }
-        
+
         $responseContent     = curl_exec($ch);
         $response['headers'] = curl_getinfo($ch);
         $response            = $this->setResponseState($response, $responseContent, $ch);
@@ -467,7 +469,7 @@ class API
     private function prepareStateForRequest($http_verb, $method, $url, $timeout)
     {
         $this->last_error = '';
-        
+
         $this->request_successful = false;
 
         $this->last_response = array(
@@ -489,37 +491,37 @@ class API
 
     /**
      * Get the HTTP headers as an array of header-name => header-value pairs.
-     * 
+     *
      * The "Link" header is parsed into an associative array based on the
      * rel names it contains. The original value is available under
      * the "_raw" key.
-     * 
+     *
      * @param   string  $headersAsString    Header string
      * @return  array       Headers as an associative array
      */
     private function getHeadersAsArray($headersAsString)
     {
         $headers = array();
-        
+
         foreach (explode("\r\n", $headersAsString) as $i => $line) {
             if ($i === 0) { // HTTP code
                 continue;
             }
-            
+
             $line = trim($line);
             if (empty($line)) {
                 continue;
             }
-            
+
             list($key, $value) = explode(': ', $line);
-            
+
             if ($key == 'Link') {
                 $value = array_merge(
                     array('_raw' => $value),
                     $this->getLinkHeaderAsArray($value)
                 );
             }
-            
+
             $headers[$key] = $value;
         }
 
@@ -529,25 +531,25 @@ class API
 
     /**
      * Extract all rel => URL pairs from the provided Link header value.
-     * 
+     *
      * Mailchimp only implements the URI reference and relation type from
      * RFC 5988, so the value of the header is something like this:
-     * 
+     *
      * 'https://us13.api.mailchimp.com/schema/3.0/Lists/Instance.json; rel="describedBy", <https://us13.admin.mailchimp.com/lists/members/?id=XXXX>; rel="dashboard"'
-     * 
+     *
      * @param   string  $linkHeaderAsString     Rel-type header as a string
      * @return  array       Associative array of the Rel header
      */
     private function getLinkHeaderAsArray($linkHeaderAsString)
     {
         $urls = array();
-        
+
         if (preg_match_all('/<(.*?)>\s*;\s*rel="(.*?)"\s*/', $linkHeaderAsString, $matches)) {
             foreach ($matches[2] as $i => $relName) {
                 $urls[$relName] = $matches[1][$i];
             }
         }
-        
+
         return $urls;
     }
 
@@ -596,9 +598,9 @@ class API
         if ($responseContent === false) {
             $this->last_error = curl_error($ch);
         } else {
-        
+
             $headerSize = $response['headers']['header_size'];
-            
+
             $response['httpHeaders'] = $this->getHeadersAsArray(substr($responseContent, 0, $headerSize));
             $response['body'] = substr($responseContent, $headerSize);
 

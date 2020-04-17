@@ -156,11 +156,17 @@ function plugin_user_create_mailchimp($uid)
 {
     // First, sync with mailchimp to get any lists that they might have
     // subscribed to before becoming site members.
-    $email = MLCH_syncWithMC($uid);
+    //$email = MLCH_syncWithMC($uid);
+    $Sub = Mailchimp\Subscriber::getInstance($uid);
+    $email = $Sub->syncWithMC();
+    //$email = MLCH_syncWithMC($uid);
     if (isset($_POST['mailchimp_subscribe']) &&
-            $_POST['mailchimp_subscribe'] == 1 &&
-            !MLCH_isSubscribed($uid) ) {
-        MLCH_subscribe($uid, $email);
+        $_POST['mailchimp_subscribe'] == 1 &&
+        !$Sub->isSubscribed()
+    ) {
+        //!MLCH_isSubscribed($uid) ) {
+        //MLCH_subscribe($uid, $email);
+        \Mailchimp\Subscriber::subscribe($uid, $email);
     }
 }
 
@@ -175,7 +181,8 @@ function plugin_user_delete_mailchimp($uid)
     global $_CONF_MLCH;
 
     if ($_CONF_MLCH['del_user_unsub']) {
-        MLCH_unsubscribe($uid);
+        //MLCH_unsubscribe($uid);
+        \Mailchimp\Subscriber::unsubscribe($uid);
     }
 }
 
@@ -192,7 +199,7 @@ function plugin_user_login_mailchimp($uid)
     global $_CONF_MLCH;
 
     if ($_CONF_MLCH['sync_at_login']) {
-        MLCH_syncWithMC($uid);
+        //MLCH_syncWithMC($uid);
     }
 }
 
@@ -278,9 +285,11 @@ function plugin_profileedit_mailchimp($uid, $panel, $fieldset)
         $old_email = $U['email'];
     }
     if ($panel == 'privacy' && $fieldset == 'privacy') {
-        $cnt = DB_count($_TABLES['mailchimp_cache'],
-                array('uid', 'list', 'subscribed'),
-                array($uid, DB_escapeString($_CONF_MLCH['def_list']), 1) );
+        $cnt = DB_count(
+            $_TABLES['mailchimp_cache'],
+            array('uid', 'listid', 'subscribed'),
+            array($uid, DB_escapeString($_CONF_MLCH['def_list']), 1)
+        );
         if ($cnt == 1) {
             $chk = 'checked="checked"';
             $prev = 1;
@@ -302,7 +311,6 @@ function plugin_profileedit_mailchimp($uid, $panel, $fieldset)
         $T->parse('output', 'profile');
         $retval .= $T->finish($T->get_var('output'));
     }
-
     return $retval;
 }
 
@@ -325,19 +333,29 @@ function plugin_user_changed_mailchimp($uid)
         $dbl_optin = true;
     }
 
+    $U = Mailchimp\Subscriber::getInstance($uid);
     // Since this is calling an external API instead of just updating our
     // own database, make sure the subscription selection has actually changed
-    if (isset($_POST['mailchimp_subscribe']) &&
-        $_POST['mailchimp_oldsub'] == '0') {
-        MLCH_subscribe($uid, $_POST['email'], '', $dbl_optin);
-    } elseif (!isset($_POST['mailchimp_subscribe']) &&
-        $_POST['mailchimp_oldsub'] == '1') {
-        MLCH_unsubscribe($uid, $_POST['email']);
+    if (
+        isset($_POST['mailchimp_subscribe']) &&
+        $_POST['mailchimp_oldsub'] == '0'
+    ) {
+        //MLCH_subscribe($uid, $_POST['email'], '', $dbl_optin);
+        Mailchimp\Subscriber::subscribe($uid, $_POST['email'], '', $dbl_optin);
+    } elseif (
+        !isset($_POST['mailchimp_subscribe']) &&
+        $_POST['mailchimp_oldsub'] == '1'
+    ) {
+        //MLCH_unsubscribe($uid, $_POST['email']);
+        Mailchimp\Subscriber::unsubscribe($uid, $_POST['email']);
     }
     // Get the existing email address to update Mailchimp
-    $fname = \LGLib\NameParser::F($_POST['fullname']);
-    $lname = \LGLib\NameParser::L($_POST['fullname']);
-    MLCH_updateUser($uid,
+    /*$fname = LGLib\NameParser::F($_POST['fullname']);
+    $lname = LGLib\NameParser::L($_POST['fullname']);
+
+    // Update Mailchimp from the new parameters.
+    // Don't worry about the return value, nothing to be done if if fails.
+    $U->updateMailchimp(
         array(
             'merge_vars' => array(
                 'new-email' => $_POST['email'],
@@ -346,7 +364,7 @@ function plugin_user_changed_mailchimp($uid)
             ),
         ),
         $_POST['mailchimp_old_email']
-    );
+    );*/
 }
 
 
@@ -404,10 +422,10 @@ function plugin_itemdeleted_mailchimp($id, $type)
 }
 
 
-function plugin_userchanged_mailchimp($uid)
+/*function plugin_userchanged_mailchimp($uid)
 {
     echo "here";die;
-}
+}*/
 
 
 /**
@@ -433,38 +451,17 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
     );
     //var_dump($info);die;
     if ($info !== NULL && !empty($info['list_segment'])) {       // got some information
-        $lists = MLCH_listsByUid($id);
+        $Sub = Mailchimp\Subscriber::getInstance($id);
+        $lists = $Sub->getSubscribed();
         $params = array(
             'merge_fields' => array(
                 'MEMSTATUS' => $info['list_segment'],
             )
         );
         foreach ($lists as $L) {
-            MLCH_updateUser($uid, $params, $info['email']);
+            $Sub->updateMailchimp($params, $info['email']);
         }
     }
-}
-
-
-/**
- * Get all the lists to which a user is subscribed, from the cache.
- *
- * @param   integer $uid    User ID
- * @return  array       Array of list IDs
- */
-function MLCH_listsByUid($uid)
-{
-    global $_TABLES;
-
-    $uid = (int)$uid;
-    $sql = "SELECT list FROM {$_TABLES['mailchimp_cache']}
-        WHERE uid = $uid AND subscribed = 1";
-    $res = DB_query($sql);
-    $retval = array();
-    while ($A = DB_fetchArray($res, false)) {
-        $retval[] = $A['list'];
-    }
-    return $retval;
 }
 
 
@@ -473,7 +470,7 @@ function MLCH_listsByUid($uid)
  *
  * @return  array   Array of items to be removed
  */
-function plugin_autouninstall_mailchimp ()
+function plugin_autouninstall_mailchimp()
 {
     $out = array (
         // give the name of the tables, without $_TABLES[]
@@ -504,11 +501,8 @@ function phpblock_mailchimp_sub()
 {
     global $_CONF, $LANG_MLCH, $_CONF_MLCH, $_USER, $_TABLES;
 
-    if (!COM_isAnonUser()) {
-        // Anon always sees the block, no way to know if they're subscribed
-        $c = DB_count($_TABLES['mailchimp_cache'],
-            array('uid', 'list', 'subscribed'),
-            array($_USER['uid'], $_CONF_MLCH['def_list'], 1));
+    $Sub = Mailchimp\Subscriber::getInstance($_USER['uid']);
+    if ($Sub->isSubscribed()) {
         if ($c > 0) return '';
     }
 
@@ -516,6 +510,7 @@ function phpblock_mailchimp_sub()
     $T->set_file('mailchimp_block', 'block_small.thtml');
     $T->set_var(array(
         'block_text' => sprintf($LANG_MLCH['block_text'], $_CONF['site_url']),
+        'uid' => $_USER['uid'],
         //'block_button_text' => $LANG_MLCH['block_button_text'],
         //'block_link_text'   => $LANG_MLCH['block_link_text'],
         //'site_name' => $_CONF['site_name'],
@@ -776,7 +771,7 @@ function XMLCH_getGroups($list_id='')
  * @param   boolean $dbl_opt    True (default) to require double-opt-in
  * @return  boolean     True on success, False on failure
  */
-function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
+function XMLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
 {
     global $_CONF_MLCH, $LANG_MLCH, $_USER, $_TABLES;
 
@@ -799,35 +794,37 @@ function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
 
     // Get the first and last name merge values.
     if ($uid > 1) {
-        $fullname = $uid == $_USER['uid'] ? $_USER['fullname'] :
-                DB_getItem($_TABLES['users'], 'fullname', "uid = $uid");
-        if (empty($email)) $email = MLCH_getEmail($uid);
-
-        // Parse the member name ino first and last
-        if (!empty($fullname)) {
-            $fname = LGLib\NameParser::F($fullname);
-            $lname = LGLib\NameParser::L($fullname);
-        } else {
-            $fname = '';
-            $lname = '';
+        $Sub = Mailchimp\Subscriber::getInstance($uid);
+        $fullname = $Sub->getFullname();
+        if (empty($email)){
+            $email = $Sub->getEmail();
         }
+        $fname = $Sub->getFirstName();
+        $lname = $Sub->getLasttName();
+
         // only update if there is data (might be values in the list not in
         // the local db)
-        if (!empty($fname)) $merge_vars['FNAME'] = $fname;
-        if (!empty($lname)) $merge_vars['LNAME'] = $lname;
+        if (!empty($fname)) {
+            $merge_vars['FNAME'] = $fname;
+        }
+        if (!empty($lname)) {
+            $merge_vars['LNAME'] = $lname;
+        }
     } else {
         // Anonymous user. No merge vars available, and must have valid email.
         $merge_vars = NULL;
     }
-    if (empty($email)) return false;    // Can't have an empty email address
+    if (empty($email)) {
+        return false;    // Can't have an empty email address
+    }
 
     // Get the membership status of this subscriber from the Membership
     // plugin, if available. This goes into the merge_vars to segment the
     // list by current, former and nonmember status
     $status = PLG_invokeService('membership', 'mailingSegment',
         array(
-            'uid'=>$uid,
-            'email'=>$email,
+            'uid'   => $uid,
+            'email' => $email,
         ),
         $segment,
         $msg
@@ -837,7 +834,7 @@ function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
     }
 
     // Process Subscription
-    $api = \Mailchimp\API::getInstance();
+    $api = Mailchimp\API::getInstance();
     $params = array(
         'id' => $list,
         'email_address' => $email,
@@ -853,7 +850,8 @@ function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
         $retval = false;
     } else {
         if ($uid > 1) {
-            MLCH_updateCache($uid, $list);     // Update cache if not anon
+            //MLCH_updateCache($uid, $list);     // Update cache if not anon
+            Mailchimp\Subscriber::getInstance($uid)->updateCache();
         }
         $msg = $dbl_opt ? $LANG_MLCH['dbl_optin_required'] :
                 $LANG_MLCH['no_dbl_optin'];
@@ -872,7 +870,7 @@ function MLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
  * @param   string  $list   Mailing list being removed. Defaults to def_list
  * @return  boolean         True on success, False on error or plugin inactive
  */
-function MLCH_unsubscribe($uid, $email='', $list = '')
+function XMLCH_unsubscribe($uid, $email='', $list = '')
 {
     global $_CONF_MLCH, $_TABLES;
 
@@ -920,9 +918,12 @@ function MLCH_unsubscribe($uid, $email='', $list = '')
  * @param   string  $list   Optional single or array of lists, or default list
  * @param   boolean $clear  Clear the current cache? default = false
  */
-function MLCH_updateCache($uid, $list='', $clear=false)
+function XMLCH_updateCache($uid, $list='', $clear=false)
 {
     global $_USER, $_CONF_MLCH, $_TABLES;
+
+    Mailchimp\Subscriber::getInstance($uid)->updateCache(true);
+    return;
 
     $uid = (int)$uid;
     if (empty($list)) $list = $_CONF_MLCH['def_list'];
@@ -997,7 +998,7 @@ function MLCH_getDocURL($file, $doclang='')
  * @param   integer $uid    User ID
  * @return  string          User Email address
  */
-function MLCH_syncWithMC($uid)
+function XMLCH_syncWithMC($uid)
 {
     global $_TABLES, $_CONF_MLCH;
 
@@ -1005,7 +1006,10 @@ function MLCH_syncWithMC($uid)
     if ($uid < 1) return '';    // nothing to do for anon users
 
     // Get the user's email address & all the lists they belong go.
-    $email = MLCH_getEmail($uid);
+    //$email = MLCH_getEmail($uid);
+    //$email = \Mailchimp\Subscriber::getEmail($uid);
+    $Sub = Mailchimp\Subscriber::getInstance($uid);
+    $email = $Sub->getEmail();
     //USES_mailchimp_class_api();
     $api = Mailchimp\API::getInstance();
     $out = $api->listsForEmail($email);
@@ -1016,7 +1020,9 @@ function MLCH_syncWithMC($uid)
                 $lists[] = $list_info['id'];
             }
         }
-        MLCH_updateCache($uid, $lists, true);
+        //MLCH_updateCache($uid, $lists, true);
+        //Mailchimp\Subscriber::getInstance($uid)->updateCache(true);
+        $Sub->updateCache(true);
     }
     return $email;
 }
@@ -1031,7 +1037,7 @@ function MLCH_syncWithMC($uid)
  * @param   boolean $force  True to force read from DB
  * @return  string      User's email address
  */
-function MLCH_getEmail($uid, $force=false)
+function XMLCH_getEmail($uid, $force=false)
 {
     global $_TABLES, $_USER;
     static $emails = array();
@@ -1053,7 +1059,7 @@ function MLCH_getEmail($uid, $force=false)
  * @param   string  $email  Email address
  * @return  integer $uid    User ID, zero if not found
  */
-function MLCH_getUid($email)
+function XMLCH_getUid($email)
 {
     global $_TABLES, $_USER;
 
@@ -1079,7 +1085,8 @@ function XMLCH_getMemberInfo($uid)
 
     if (!isset($info[$uid])) {
         $info[$uid] = array();
-        $email = MLCH_getEmail($uid);
+        $email = \Mailchimp\Subscriber::getEmail($uid);
+        // $email = MLCH_getEmail($uid);
         $params = array(
             'query' => $email,
             'id' => $_CONF_MLCH['def_list'],
@@ -1109,7 +1116,7 @@ function XMLCH_getMemberInfo($uid)
  * @param   string  $email  Optional email, if email address is to be changed
  * @return  boolean     True on success, False on failure
  */
-function MLCH_updateUser($uid, $params, $email='')
+function XMLCH_updateUser($uid, $params, $email='')
 {
     global $_CONF_MLCH;
 
@@ -1137,7 +1144,7 @@ function MLCH_updateUser($uid, $params, $email='')
  *
  * @return  string      Text output from the sync process
  */
-function MLCH_syncCache()
+function XMLCH_syncCache()
 {
     global $_TABLES, $LANG_MLCH, $_CONF_MLCH;
 
@@ -1153,7 +1160,7 @@ function MLCH_syncCache()
             'start' => 0,
         ),
     );
-    $lists = MLCH_getLists();
+    //$lists = MLCH_getLists();
     $total_members = $lists[$list_id]['members'];
     $pages = ceil(($total_members / 100));
     $subscribers = array();
@@ -1198,7 +1205,7 @@ function MLCH_syncCache()
         $val_str = implode(',', $sql_values);
         DB_query("INSERT INTO {$_TABLES['mailchimp_cache']} VALUES $val_str");
     }
-    $retval .= "Re-sync'd mailchimp cache";
+    $retval .= "Re-sync&apos;d mailchimp cache";
     return $retval;
 }
 
@@ -1213,7 +1220,7 @@ function MLCH_syncCache()
  * @param   string  $list   List ID, default = default list
  * @return  boolean         True if subscribed, False if not
  */
-function MLCH_isSubscribed($uid=0, $list='')
+function XMLCH_isSubscribed($uid=0, $list='')
 {
     global $_TABLES, $_USER, $_CONF_MLCH;
 
@@ -1274,7 +1281,7 @@ function MLCH_auditLog($logentry = '')
 
     // A little sanitizing
     $logentry = str_replace(
-            array('<?', '?>'),
+            array('<'.'?', '?'.'>'),
             array('(@', '@)'),
             $logentry);
     $timestamp = strftime( '%c' );

@@ -8,7 +8,7 @@
  * @copyright   Copyright (c) 2012 Lee Garner <lee@leegarner.com>
  * @package     mailchimp
  * @version     v0.0.1
- * @license     http://opensource.org/licenses/gpl-2.0.php 
+ * @license     http://opensource.org/licenses/gpl-2.0.php
  *             GNU Public License v2 or later
  * @filesource
  */
@@ -34,15 +34,19 @@ function service_subscribe_mailchimp($A, &$output, &$svc_msg)
 
     $output = '';
     $retval = PLG_RET_OK;       // assume response will be OK
-    if (!MAILCHIMP_ACTIVE) return $retval;
+    if (!MAILCHIMP_ACTIVE) {
+        return $retval;
+    }
 
     $uid = isset($A['uid']) ? (int)$A['uid'] : $_USER['uid'];
     $list = isset($A['list']) ? $A['list'] : $_CONF_MLCH['def_list'];
     $email = isset($A['email']) ? $A['email'] : '';
     $dbl_optin = isset($A['dbl_optin']) ? $A['dbl_optin'] : null;
-    
-    $status = MLCH_subscribe($uid, $email, $list, $dbl_optin);
-    if (!$status) $retval = PLG_RET_ERROR;
+
+    $status = \Mailchimp\Subscriber::getInstance($uid)->subscribe($email, $list, $dbl_optin);
+    if (!$status) {
+        $retval = PLG_RET_ERROR;
+    }
     return $retval;
 }
 
@@ -64,7 +68,8 @@ function service_unsubscribe_mailchimp($A, &$output, &$svc_msg)
     $uid = isset($A['uid']) ? (int)$A['uid'] : $_USER['uid'];
     $list = isset($A['list']) ? $A['list'] : $_CONF_MLCH['def_list'];
     $email = isset($A['email']) ? $A['email'] : '';
-    $status = MLCH_unsubscribe($uid, $email, $list);
+    //$status = MLCH_unsubscribe($uid, $email, $list);
+    $status = \Mailchimp\Subscriber::unsubscribe($uid, $email, $list);
     if (!$status) $retval = PLG_RET_ERROR;
     return $retval;
 }
@@ -85,12 +90,18 @@ function service_updateuser_mailchimp($A, &$output, &$svc_msg)
     unset($A['gl_svc']);
     $retval = PLG_RET_OK;
     $uid = isset($A['uid']) ? (int)$A['uid'] : $_USER['uid'];
+    $Sub = Mailchimp\Subscriber::getInstance($uid);
     // sort of a hack, this is to get the existing email addr. for Mailchimp
     // in case the address is changed in user editing.
-    $email = isset($_POST['mailchimp_old_email']) ?
-        $_POST['mailchimp_old_email'] : MLCH_getEmail($uid);
-    $status = MLCH_updateUser($uid, $A['params'], $email);
-    if (!$status) $retval = PLG_RET_ERROR;
+    if (isset($_POST['mailchimp_old_email'])) {
+        $email = $_POST['mailchimp_old_email'];
+    } else {
+        $email = $Sub->getEmail();
+    }
+    $status = $Sub->updateMailchimp($A['params'], $email);
+    if (!$status) {
+        $retval = PLG_RET_ERROR;
+    }
     return $retval;
 }
 
@@ -111,7 +122,7 @@ function service_issubscribed_mailchimp($A, &$output, &$svc_msg)
         $A = array('uid' => $A);
     }
     if (!isset($A['list'])) $A['list'] = $_CONF_MLCH['def_list'];
-    $output = MLCH_isSubscribed($A['uid'], $A['list']);
+    $output = \Mailchimp\Subscriber::getInstance($A['uid'])->isSubscribed($A['list']);
     return PLG_RET_OK;
 }
 

@@ -32,7 +32,8 @@ $LANG_MLCH = array(
     'confirm_needed' => 'Watch your email for a confirmation message and a url that you\'ll need to visit to confirm your subscription.',
     'dbl_optin_required' => 'Double-opt-in required',
     'no_dbl_optin' => 'No Doublie-opt-in',
-    'instr_admin' => 'Sync Cache: update all local users in the cache table with MailChimp status.<br />Import Users: subscribe all local users to the default list, double-optin required.',
+    'dscp_sync_cache' => 'Update all local users in the cache table with the actual MailChimp status.',
+    'dscp_import_users' => 'Subscribe all local users to the default list, double-optin required.',
 );
 
 

@@ -104,7 +104,7 @@ function MLCH_upgrade_0_0_3()
  * @param   boolean $dvlp       True to ignore errors
  * @return  boolean     True on success, False on failure
  */
-function MLCH_do_upgrade_sql($version = 'Undefined', $dvlp=false
+function MLCH_do_upgrade_sql($version = 'Undefined', $dvlp=false)
 {
     global $_TABLES, $_CONF_MLCH, $_MLCH_UPGRADE_SQL;
 

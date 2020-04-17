@@ -120,14 +120,6 @@ function MLCH_adminMenu()
     $token = SEC_createToken();
     $menu_arr = array(
         array(
-            'url' => MLCH_ADMIN_URL . '?updcache=x',
-            'text' => $LANG_MLCH['sync_cache'],
-        ),
-        array(
-            'url' => MLCH_ADMIN_URL . '?importusers=x',
-            'text' => $LANG_MLCH['import_users'],
-        ),
-        array(
             'url' => $_CONF['site_admin_url'],
             'text' => $LANG_ADMIN['admin_home'],
         ),
@@ -137,6 +129,11 @@ function MLCH_adminMenu()
     $retval .= ADMIN_createMenu(
             $menu_arr, $LANG_MLCH['instr_admin'],
             plugin_geticon_mailchimp());
+    $T = new \Template(MLCH_PI_PATH . '/templates');
+    $T->set_file('funcs', 'maint.thtml');
+    $T->set_var('admin_url', MLCH_ADMIN_URL . '/index.php');
+    $T->parse('output', 'funcs');
+    $retval .= $T->finish($T->get_var('output'));
     $retval .= COM_endBlock();
     return $retval;
 }
@@ -159,7 +156,9 @@ case 'importusers':
     break;
 
 case 'updcache':
-    $content .= MLCH_syncCache();
+    //$txt = MLCH_syncCache();
+    $txt = Mailchimp\Subscriber::syncAllFromMailchimp();
+    $content .= COM_showMessageText($txt);
     break;
 }
 
