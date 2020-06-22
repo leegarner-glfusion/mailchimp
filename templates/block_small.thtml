@@ -17,6 +17,10 @@
 $("#MLCH_form").submit(function(e) {
     e.preventDefault();
     var frm = document.getElementById("MLCH_form");
+    if (frm.email.value == "") {
+        $.UIkit.notify("{$LANG_MLCH['email_empty']}", {timeout: 2000,pos:'top-center'});
+        return;
+    }
     var message = document.getElementById("mlch_sub_response");
     var dataS = {
         "action" : "add",

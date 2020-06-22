@@ -27,6 +27,7 @@ $LANG_MLCH = array(
     'add_success' => 'Your email address has been successfully added to our list.',
     'add_error' => 'There was an error adding your address.',
     'adding_msg' => 'Adding email address...',
+    'email_empty' => 'An empty email address was provided.',
     'block_text_small' => 'Join our mailing list!',
     'block_text' => 'Enter your email address below and we&apos;ll keep you up-to-date on our news, events &amp; other specials.',
     'confirm_needed' => 'Watch your email for a confirmation message and a url that you\'ll need to visit to confirm your subscription.',
