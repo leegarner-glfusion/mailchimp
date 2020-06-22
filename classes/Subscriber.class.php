@@ -373,7 +373,7 @@ class Subscriber
 
         // if no api key, don't try anything
         if (!MAILCHIMP_ACTIVE) {
-            Log::System('Mailchimp is not active. API Key entered?');
+            Logger::System('Mailchimp is not active. API Key entered?');
             return false;
         }
 
@@ -461,7 +461,7 @@ class Subscriber
         );
         $mc_status = $api->subscribe($email, $params, $list);
         if (!$api->success()) {
-            Log::Audit("Failed to subscribe $email to $list. Error: " .
+            Logger::Audit("Failed to subscribe $email to $list. Error: " .
                 $api->getLastError(), true);
             $retval = false;
         } else {
@@ -471,7 +471,7 @@ class Subscriber
             }
             $msg = $dbl_opt ? $LANG_MLCH['dbl_optin_required'] :
                 $LANG_MLCH['no_dbl_optin'];
-            Log::Audit("Subscribed $email to $list." . $msg);
+            Logger::Audit("Subscribed $email to $list." . $msg);
             $retval = true;
         }
         return $retval;
@@ -492,7 +492,7 @@ class Subscriber
 
         // if no api key, do nothing
         if (!MAILCHIMP_ACTIVE) {
-            Log::System('Mailchimp is not active. API Key entered?');
+            Logger::System('Mailchimp is not active. API Key entered?');
             return false;
         }
 
@@ -507,7 +507,7 @@ class Subscriber
         $mc_status = $api->unsubscribe($email, $list);
         if ($api->success()) {
             // List_NotSubscribed error is ok
-            Log::Audit("Unsubscribed $email from $list");
+            Logger::Audit("Unsubscribed $email from $list");
             // Delete records from cache.
             $sql = "INSERT INTO {$_TABLES['mailchimp_cache']} SET
                     uid = $uid, listid = '$list', subscribed = 0
@@ -516,7 +516,7 @@ class Subscriber
             DB_query($sql, 1);
             $retval = true;
         } else {
-            Log::Audit("Failed to unsubscribe $email from $list. Error" .
+            Logger::Audit("Failed to unsubscribe $email from $list. Error" .
                 $api->getLastError());
             $retval = false;
         }

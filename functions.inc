@@ -777,7 +777,7 @@ function XMLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
 
     // if no api key, don't try anything
     if (!MAILCHIMP_ACTIVE) {
-        Mailchimp\Log::System('Mailchimp is not active. API Key entered?');
+        Mailchimp\Logger::System('Mailchimp is not active. API Key entered?');
         return false;
     }
 
@@ -845,7 +845,7 @@ function XMLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
     );
     $mc_status = $api->subscribe($email, $params, $list);
     if (!$api->success()) {
-        MLCH_auditLog("Failed to subscribe $email to $list. Error: " .
+        Mailchimp\Logger::Audit("Failed to subscribe $email to $list. Error: " .
             $api->getLastError(), true);
         $retval = false;
     } else {
@@ -855,7 +855,7 @@ function XMLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
         }
         $msg = $dbl_opt ? $LANG_MLCH['dbl_optin_required'] :
                 $LANG_MLCH['no_dbl_optin'];
-        MLCH_auditLog("Subscribed $email to $list." . $msg);
+        Mailchimp\Logger::Audit("Subscribed $email to $list." . $msg);
         $retval = true;
     }
     return $retval;
@@ -877,7 +877,7 @@ function XMLCH_unsubscribe($uid, $email='', $list = '')
 
     // if no api key, do nothing
     if (!MAILCHIMP_ACTIVE) {
-        Mailchimp\Log::System('Mailchimp is not active. API Key entered?');
+        Mailchimp\Logger::System('Mailchimp is not active. API Key entered?');
         return false;
     }
 
@@ -892,7 +892,7 @@ function XMLCH_unsubscribe($uid, $email='', $list = '')
     $mc_status = $api->unsubscribe($email, $list);
     if ($api->success()) {
         // List_NotSubscribed error is ok
-        MLCH_auditLog("Unsubscribed $email from $list");
+        Mailchimp\Logger::Audit("Unsubscribed $email from $list");
         // Delete records from cache.
         $sql = "INSERT INTO {$_TABLES['mailchimp_cache']} SET
                 uid = $uid, list='$list', subscribed=0
@@ -901,7 +901,7 @@ function XMLCH_unsubscribe($uid, $email='', $list = '')
         DB_query($sql, 1);
         $retval = true;
     } else {
-        MLCH_auditLog("Failed to unsubscribe $email from $list. Error" .
+        Mailchimp\Logger::Audit("Failed to unsubscribe $email from $list. Error" .
             $api->getLastError());
         $retval = false;
     }
@@ -1232,81 +1232,6 @@ function XMLCH_isSubscribed($uid=0, $list='')
     $res = (int)DB_getItem($_TABLES['mailchimp_cache'], 'subscribed',
             "uid = $uid AND list = '$list'");
     return $res == 1 ? true : false;
-}
-
-
-/**
- * Debug function to log data to the error log.
- *
- * @param   string  $msg    Message to log
- * @param   string  $type   Message severity
- */
-function MLCH_debug($msg, $type='debug')
-{
-    global $_CONF_MLCH;
-
-    $types = array(
-        'debug' => 1,
-        'info'  => 2,
-        'warn'  => 4,
-        'crit'  => 8,
-    );
-
-    if (!isset($types[$type]) ||
-        !isset($_CONF_MLCH[$type]) ||
-        $_CONF_MLCH[$type] > $types[$type]) {
-        return;
-    }
-
-    if (is_array($msg) && isset($msg['error'])) {
-        // a mailchimp error message
-        $msg = sprintf("API Error %s - %s", $msg['code'], $msg['error']);
-    }
-    Mailchimp\Log::System('Mailchimp ' . strtoupper($type) . ': ' . $msg);
-}
-
-
-/**
- * Log activity to a plugin-specific log file.
- *
- * @todo    available in lglib. Perhaps just a wrapper to pass along $pi_name,$msg.
- * @param string $logentry Text to log
- */
-function MLCH_auditLog($logentry = '')
-{
-    global $_CONF, $_USER, $LANG01, $_CONF_MLCH;
-
-    if ($logentry == '')
-        return '';
-
-    // A little sanitizing
-    $logentry = str_replace(
-            array('<'.'?', '?'.'>'),
-            array('(@', '@)'),
-            $logentry);
-    $timestamp = strftime( '%c' );
-    $logfile = $_CONF['path_log'] . $_CONF_MLCH['pi_name'] . '.log';
-
-    // Can't open the log file?  Return an error
-    if (!$file = fopen($logfile, 'a')) {
-        Mailchimp\Log::System("Unable to open {$_CONF_MLCH['pi_name']}.log");
-        return;
-    }
-
-    // Get the user name if it's not anonymous
-    if (isset($_USER['uid'])) {
-        $byuser = $_USER['uid'] . '-'.
-                COM_getDisplayName($_USER['uid'],
-                    $_USER['username'], $_USER['fullname']);
-    } else {
-        $byuser = 'anon';
-    }
-    $byuser .= '@' . $_SERVER['REMOTE_ADDR'];
-
-    // Write the log entry to the file
-    fputs($file, "$timestamp ($byuser) - $logentry\n");
-    fclose($file);
-
 }
 
 require_once __DIR__ . '/services.inc.php';

@@ -118,6 +118,17 @@ $mailchimpConfigData = array(
         'set' => true,
         'group' => 'mailchimp',
     ),
+    array(
+        'name' => 'log_level',
+        'default_value' => '200',
+        'type' => 'select',
+        'subgroup' => 0,
+        'fieldset' => 0,
+        'selection_array' => 18,
+        'sort' => 70,
+        'set' => true,
+        'group' => 'mailchimp',
+    ),
 
 
     array(
@@ -172,17 +183,6 @@ $mailchimpConfigData = array(
         'fieldset' => 10,
         'selection_array' => 0,
         'sort' => 40,
-        'set' => true,
-        'group' => 'mailchimp',
-    ),
-    array(
-        'name' => 'debug',
-        'default_value' => 0,
-        'type' => 'select',
-        'subgroup' => 0,
-        'fieldset' => 10,
-        'selection_array' => 0,
-        'sort' => 50,
         'set' => true,
         'group' => 'mailchimp',
     ),

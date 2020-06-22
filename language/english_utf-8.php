@@ -63,7 +63,7 @@ $LANG_confignames['mailchimp'] = array(
     'webhook_handlesub' => 'Webhook handles subscriptions?',
     'webhook_handleunsub' => 'Webhook handles removals?',
     'webhook_handleupemail' => 'Update user email when Mailchimp email changes?',
-    'debug' => 'Enable debugging?',
+    'log_level' => 'Log Level',
 );
 
 $LANG_configsubgroups['mailchimp'] = array(
@@ -78,7 +78,22 @@ $LANG_fs['mailchimp'] = array(
 // Note: entries 0, 1, 9, and 12 are the same as in $LANG_configselects['Core']
 $LANG_configselects['mailchimp'] = array(
     0 => array('Yes' => 1, 'No' => 0),
-    4 => array('No' => 0, 'No- Subscribe Automatically' => 3, 'Yes- Checked (not recommended)' => 1, 'Yes- Unchecked' => 2),
+    4 => array(
+        'No' => 0,
+        'No- Subscribe Automatically' => 3,
+        'Yes- Checked (not recommended)' => 1,
+        'Yes- Unchecked' => 2,
+    ),
+    18 => array(
+        'DEBUG' => 100,
+        'INFO'  => 200,
+        'NOTICE' => 250,
+        'WARNING' => 300,
+        'ERROR' => 400,
+        'CRITICAL' => 500,
+        'ALERT' => 550,
+        'EMERGENCY' => 600,
+    ),
 );
 
 ?>

@@ -3,7 +3,7 @@
 *   English language strings for the MailChimp plugin
 *
 *   @author     Lee Garner <lee@leegarner.com>
-*   @copyright  Copyright (c) 2012 Lee Garner <lee@leegarner.com>
+*   @copyright  Copyright (c) 2012-2018 Lee Garner <lee@leegarner.com>
 *   @package    mailchimp
 *   @version    0.0.1
 *   @license    http://opensource.org/licenses/gpl-2.0.php 
@@ -15,23 +15,26 @@
 global $LANG32;
 
 $LANG_MLCH = array(
+    'menu_label' => 'Mailchimp',
     'adminhome' => 'Admin Home',
     'sync_cache' => 'Sync Cache',
     'import_users' => 'Import Users',
     'subscribe_to_list' => 'Subscribe to Mailing List',
+    'subscribed' => 'Subscribed to Mailing List',
     'hlp_sub_checkbox' => 'Check here to subscribe to our mailing list',
     'block_title' => 'Mailing List',
     'block_button_text' => 'Sign Up',
     'add_success' => 'Your email address has been successfully added to our list.',
     'add_error' => 'There was an error adding your address.',
     'adding_msg' => 'Adding email address...',
+    'email_empty' => 'An empty email address was provided.',
     'block_text_small' => 'Join our mailing list!',
     'block_text' => 'Enter your email address below and we&apos;ll keep you up-to-date on our news, events &amp; other specials.',
     'confirm_needed' => 'Watch your email for a confirmation message and a url that you\'ll need to visit to confirm your subscription.',
     'dbl_optin_required' => 'Double-opt-in required',
     'no_dbl_optin' => 'No Doublie-opt-in',
-    'instr_admin' => 'Sync Cache: update all local users in the cache table with MailChimp status.<br />Import Users: subscribe all local users to the default list, double-optin required.',
-    'submit' => 'Submit',
+    'dscp_sync_cache' => 'Update all local users in the cache table with the actual MailChimp status.',
+    'dscp_import_users' => 'Subscribe all local users to the default list, double-optin required.',
 );
 
 
@@ -60,7 +63,7 @@ $LANG_confignames['mailchimp'] = array(
     'webhook_handlesub' => 'Webhook handles subscriptions?',
     'webhook_handleunsub' => 'Webhook handles removals?',
     'webhook_handleupemail' => 'Update user email when Mailchimp email changes?',
-    'debug' => 'Enable debugging?',
+    'log_level' => 'Log Level',
 );
 
 $LANG_configsubgroups['mailchimp'] = array(
@@ -75,7 +78,22 @@ $LANG_fs['mailchimp'] = array(
 // Note: entries 0, 1, 9, and 12 are the same as in $LANG_configselects['Core']
 $LANG_configselects['mailchimp'] = array(
     0 => array('Yes' => 1, 'No' => 0),
-    4 => array('No' => 0, 'No- Subscribe Automatically' => 3, 'Yes- Checked (not recommended)' => 1, 'Yes- Unchecked' => 2),
+    4 => array(
+        'No' => 0,
+        'No- Subscribe Automatically' => 3,
+        'Yes- Checked (not recommended)' => 1,
+        'Yes- Unchecked' => 2,
+    ),
+    18 => array(
+        'DEBUG' => 100,
+        'INFO'  => 200,
+        'NOTICE' => 250,
+        'WARNING' => 300,
+        'ERROR' => 400,
+        'CRITICAL' => 500,
+        'ALERT' => 550,
+        'EMERGENCY' => 600,
+    ),
 );
 
 ?>

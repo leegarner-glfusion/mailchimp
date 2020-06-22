@@ -51,7 +51,7 @@ case 'add':
     } else {
         // Basic checks passed, now try to add the address
         //$success = MLCH_subscribe(0, $address);
-        $success = \Mailchimp\Subscriber::subscribe(0, $address);
+        $success = Mailchimp\Subscriber::subscribe(0, $address);
         switch ($success) {
         case  true:
             $msg = $_CONF_MLCH['dbl_optin_members'] ?

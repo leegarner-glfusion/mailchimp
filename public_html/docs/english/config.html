@@ -58,6 +58,11 @@
         <dd>Select whether user acconts should be automatically synchronized with MailChimp during login. This is important if you choose not to enable Webhooks, and can be a good backup in case some Webhook messages aren&apos;t received. It may also increase the response time to user logins.</dd>
       </dl>
 
+      <dl id="desc_log_level">
+          <dt>Log Level</dt>
+          <dd>Select the minimum level for logging messages.</dd>
+      </dl>
+
       <dl id="desc_webhook_key">
         <dt>Webhook Key</dt>
         <dd>When you set the Webhook URL in MailChimp you can add a key value to increase security. Your Webhook URL should look like &quot;http://yoursite/mailchimp/hook.php?key=SecretKey&quot;, and you would then enter &quot;SecretKey&quot; in this field. If you omit the key then the Webhook will still work but anyone would be able to manipulate your data by sending a specially-crafted POST request. The parameter mane must be &quot;key&quot;.</dd>

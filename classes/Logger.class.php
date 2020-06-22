@@ -1,9 +1,9 @@
 <?php
 /**
- * Class to cache DB and web lookup results.
+ * Class to handle logging.
  *
  * @author      Lee Garner <lee@leegarner.com>
- * @copyright   Copyright (c) 2018 Lee Garner <lee@leegarner.com>
+ * @copyright   Copyright (c) 2018-2020 Lee Garner <lee@leegarner.com>
  * @package     mailchimp
  * @version     v0.1.0
  * @since       v0.1.0
@@ -18,7 +18,7 @@ namespace Mailchimp;
  * Class for Mailchimp Cache.
  * @package mailchimp
  */
-class Log
+class Logger
 {
     /**
      * Write a log file entry to the specified file.
@@ -92,6 +92,22 @@ class Log
     public static function System($msg)
     {
         COM_errorLog($msg);
+    }
+
+
+    /**
+     * Write a debug log message.
+     * Uses the System() function if debug logging is enabled.
+     *
+     * @param   string  $msg        Message to log
+     */
+    public static function Debug($msg)
+    {
+        global $_CONF_MLCH;
+
+        if (isset($_CONF_MLCH['log_level']) && (int)$_CONF_MLCH['log_level'] <= 100) {
+            self::System('DEBUG: ' . $msg);
+        }
     }
 
 }
