@@ -72,7 +72,7 @@ function MLCH_upgrade_0_0_3()
     DB_query("INSERT INTO {$_TABLES['features']} (ft_name, ft_descr)
             VALUES ('$ft_name', '$ft_desc')", 1);
     if (DB_error()) {
-        COM_errorLog("Upgrade: Mailchimp feature creation failed!");
+        Mailchimp\Log::System("Upgrade: Mailchimp feature creation failed!");
         return 1;
     }
     $ft_id = DB_insertId();
@@ -83,7 +83,7 @@ function MLCH_upgrade_0_0_3()
             VALUES ($ft_id, $grp_id)", 1);
     }
     if (DB_error()) {
-        COM_errorLog("upgrade: Mailchimp feature mapping failed!");
+        Mailchimp\Log::System("upgrade: Mailchimp feature mapping failed!");
         return 1;
     }
 
@@ -118,7 +118,7 @@ function MLCH_do_upgrade_sql($version = 'Undefined', $dvlp=false)
 
     // We control this, so it shouldn't happen, but just to be safe...
     if ($version == 'Undefined') {
-        COM_errorLog("Error updating {$_CONF_MLCH['pi_name']} - Undefined Version");
+        Mailchimp\Log::System("Error updating {$_CONF_MLCH['pi_name']} - Undefined Version");
         return false;
     }
 
@@ -129,10 +129,10 @@ function MLCH_do_upgrade_sql($version = 'Undefined', $dvlp=false)
 
     // Execute SQL now to perform the upgrade
     foreach ($_MLCH_UPGRADE_SQL[$version] as $sql) {
-        COM_errorLOG("Mailchimp Plugin $version update: Executing SQL => $sql");
+        Mailchimp\Log::System("Mailchimp Plugin $version update: Executing SQL => $sql");
         DB_query($sql, '1');
         if (DB_error()) {
-            COM_errorLog("SQL Error during Mailchimp plugin update",1);
+            Mailchimp\Log::System("SQL Error during Mailchimp plugin update",1);
             if (!$dvlp) return false;
         }
     }
@@ -162,7 +162,7 @@ function MLCH_do_set_version($ver)
 
     $res = DB_query($sql, 1);
     if (DB_error()) {
-        COM_errorLog("Error updating the {$_MLCH_CONF['pi_display_name']} Plugin version to $ver",1);
+        Mailchimp\Log::System("Error updating the {$_MLCH_CONF['pi_display_name']} Plugin version to $ver",1);
         return false;
     } else {
         return true;

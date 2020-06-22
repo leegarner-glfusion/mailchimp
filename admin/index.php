@@ -18,11 +18,8 @@ $pi_title = $_CONF_MLCH['pi_display_name'] . ' Version ' .
 
 // If user isn't a root user or if the backup feature is disabled, bail.
 if (!SEC_hasRights('mailchimp.admin')) {
-    $display .= COM_siteHeader('menu', $pi_title);
-    $display .= '<span class="alert">You do not have access to this area.</span>';
-    $display .= COM_siteFooter();
-    COM_accessLog("User {$_USER['username']} tried to illegally access the mailchimp admin screen.");
-    echo $display;
+    Mailchimp\Log::System("User {$_USER['username']} tried to illegally access the mailchimp admin screen.");
+    COM_404();
     exit;
 }
 
@@ -40,7 +37,7 @@ function MLCH_importUsers()
 
     // if no api key, do nothing
     if (!MAILCHIMP_ACTIVE) {
-        COM_errorLog('Mailchimp is not active. API Key entered?');
+        Mailchimp\Log::System('Mailchimp is not active. API Key entered?');
         return '';
     }
     $retval = '';

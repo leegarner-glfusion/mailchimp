@@ -777,7 +777,7 @@ function XMLCH_subscribe($uid, $email = '', $list = '', $dbl_opt=true)
 
     // if no api key, don't try anything
     if (!MAILCHIMP_ACTIVE) {
-        COM_errorLog('Mailchimp is not active. API Key entered?');
+        Mailchimp\Log::System('Mailchimp is not active. API Key entered?');
         return false;
     }
 
@@ -877,7 +877,7 @@ function XMLCH_unsubscribe($uid, $email='', $list = '')
 
     // if no api key, do nothing
     if (!MAILCHIMP_ACTIVE) {
-        COM_errorLog('Mailchimp is not active. API Key entered?');
+        Mailchimp\Log::System('Mailchimp is not active. API Key entered?');
         return false;
     }
 
@@ -1262,7 +1262,7 @@ function MLCH_debug($msg, $type='debug')
         // a mailchimp error message
         $msg = sprintf("API Error %s - %s", $msg['code'], $msg['error']);
     }
-    COM_errorLog('Mailchimp ' . strtoupper($type) . ': ' . $msg);
+    Mailchimp\Log::System('Mailchimp ' . strtoupper($type) . ': ' . $msg);
 }
 
 
@@ -1289,7 +1289,7 @@ function MLCH_auditLog($logentry = '')
 
     // Can't open the log file?  Return an error
     if (!$file = fopen($logfile, 'a')) {
-        COM_errorLog("Unable to open {$_CONF_MLCH['pi_name']}.log");
+        Mailchimp\Log::System("Unable to open {$_CONF_MLCH['pi_name']}.log");
         return;
     }
 
