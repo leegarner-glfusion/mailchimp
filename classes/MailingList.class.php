@@ -15,18 +15,29 @@ namespace Mailchimp;
 
 
 /**
- * Subscriber information class.
- * Gets the user information from the User table, and subscribed
- * lists from the cache table.
+ * Mailing list information class.
  * @package mailchimp
  */
-class MailList
+class MailingList
 {
-
+    /** Mailchimp list ID.
+     * @var string */
     private $list_id = '';
+
+    /** List name.
+     * @var string */
     private $list_name = '';
+
+    /** Number of subscribed members.
+     * @var integer */
     private $member_count = 0;
 
+
+    /**
+     * Instantiate a list object populated with data from getAll().
+     *
+     * @param   array   $A      Array of list data from getAll()
+     */
     public function __construct($A)
     {
         $this->list_id = $A['id'];
@@ -49,13 +60,11 @@ class MailList
         if ($lists === null) {
             $lists = array();
             if (MAILCHIMP_ACTIVE && !empty($_CONF_MLCH['api_key'])) {
-                //USES_mailchimp_class_api();
                 $api = API::getInstance();
                 $list_data = $api->lists();
                 if (is_array($list_data)) {
                     foreach ($list_data['lists'] as $key => $list) {
                         $members = $api->listMembers($list['id'], 'subscribed', NULL, 0, 0);
-                        //$lists[$list['id']] = array(
                         $lists[$list['id']] = new self(array(
                             'id' => $list['id'],
                             'name' => $list['name'],
@@ -69,6 +78,12 @@ class MailList
     }
 
 
+    /**
+     * Get a single list. Calls getAll() and extracts the requested list.
+     *
+     * @param   string  $list_id    List ID
+     * @return  object      MailingList object if found, Null if not
+     */
     public static function getInstance($list_id)
     {
         $Lists = self::getAll();
@@ -80,18 +95,33 @@ class MailList
     }
 
 
+    /**
+     * Get the number of members subscribed to the list.
+     *
+     * @return  integer     Member count
+     */
     public function getMemberCount()
     {
         return (int)$this->member_count;
     }
 
 
+    /**
+     * Get the list ID.
+     *
+     * @return  string      List ID
+     */
     public function getID()
     {
         return $this->list_id;
     }
 
 
+    /**
+     * Get the name of the list.
+     *
+     * @return  string      List name
+     */
     public function getName()
     {
         return $this->list_name;

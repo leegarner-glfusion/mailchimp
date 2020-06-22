@@ -13,13 +13,13 @@
  */
 namespace Mailchimp;
 
+
 /**
  * Class for Mailchimp Cache.
  * @package mailchimp
  */
 class Log
 {
-
     /**
      * Write a log file entry to the specified file.
      *
@@ -47,7 +47,7 @@ class Log
 
         // Can't open the log file?  Return an error
         if (!$file = fopen($logfile, 'a')) {
-            COM_errorLog("Unable to open {$_CONF_MLCH['pi_name']}.log");
+            COM_errorLog("Unable to open $logfile");
             return;
         }
 
@@ -72,14 +72,26 @@ class Log
     /**
      * Write an entry to the Audit log.
      *
-     * @param   string  $logfile    Log filename, 'mailchimp.log' by default
+     * @param   string  $msg        Message to log
      */
-    public static function Audit($logentry)
+    public static function Audit($msg)
     {
         global $_CONF_MLCH;
 
         $logfile = $_CONF_MLCH['pi_name'] . '.log';
-        self::write($logentry, $logfile);
+        self::write($msg, $logfile);
+    }
+
+
+    /**
+     * Write an entry to the system log.
+     * Just a wrapper for COM_errorLog().
+     *
+     * @param   string  $msg        Message to log
+     */
+    public static function System($msg)
+    {
+        COM_errorLog($msg);
     }
 
 }

@@ -341,7 +341,7 @@ class Subscriber
     {
         global $_TABLES, $_USER;
 
-        if ($email == $_USER['email']) {
+        if (isset($_USER['email']) && $email == $_USER['email']) {
             return (int)$_USER['uid'];
         }
         return (int)DB_getItem(
@@ -373,7 +373,7 @@ class Subscriber
 
         // if no api key, don't try anything
         if (!MAILCHIMP_ACTIVE) {
-            COM_errorLog('Mailchimp is not active. API Key entered?');
+            Log::System('Mailchimp is not active. API Key entered?');
             return false;
         }
 
@@ -381,13 +381,19 @@ class Subscriber
         if (empty($list) && !empty($_CONF_MLCH['def_list'])) {
             $list = $_CONF_MLCH['def_list'];
         }
-        if (empty($list)) return false;
+        if (empty($list)) {
+            return false;
+        }
 
-        if ($dbl_opt !== false) $dbl_opt = true;
+        if ($dbl_opt !== false) {
+            $dbl_opt = true;
+        }
         $uid = (int)$uid;
 
         // Try to get the user ID from the email address if not given
-        if ($uid == 0) $uid = self::getUid($email);
+        if ($uid == 0) {
+            $uid = self::getUid($email);
+        }
 
         $merge_vars = array();
         $fname = '';
@@ -424,7 +430,8 @@ class Subscriber
             // Get the membership status of this subscriber from the Membership
             // plugin, if available. This goes into the merge_vars to segment the
             // list by current, former and nonmember status
-            $status = PLG_invokeService('membership', 'mailingSegment',
+            $status = LGLIB_invokeService(
+                'membership', 'mailingSegment',
                 array(
                     'uid' => $uid,
                     'email' => $email,
@@ -485,7 +492,7 @@ class Subscriber
 
         // if no api key, do nothing
         if (!MAILCHIMP_ACTIVE) {
-            COM_errorLog('Mailchimp is not active. API Key entered?');
+            Log::System('Mailchimp is not active. API Key entered?');
             return false;
         }
 
@@ -517,6 +524,12 @@ class Subscriber
     }
 
 
+    /**
+     * Update the cache table for this user.
+     *
+     * @param   boolean $clear  True to clear all entries before updating
+     * @param   string  $listid Mailing list ID to update
+     */
     public function updateCache($clear=false, $listid='')
     {
         global $_USER, $_CONF_MLCH, $_TABLES;
@@ -542,7 +555,7 @@ class Subscriber
                     subscribed = 1
                 ON DUPLICATE KEY UPDATE
                     subscribed = 1";
-echo $sql;die;
+//echo $sql;die;
         DB_query($sql);      // Dup errors can be normal
         //}
     }
@@ -560,9 +573,9 @@ echo $sql;die;
         $api = API::getInstance();
         $list_id = $_CONF_MLCH['def_list'];
 
-        $List = MailList::getInstance($list_id);
+        $List = MailingList::getInstance($list_id);
         if ($List === NULL) {
-            return 'Invalid list specified';
+            return 'Unable to retrieve list information.';
         }
 
         $offset = 0;
@@ -629,7 +642,7 @@ echo $sql;die;
 
         if ($this->uid < 2) return '';    // nothing to do for anon users
 
-        $api = Mailchimp\API::getInstance();
+        $api = API::getInstance();
         $out = $api->listsForEmail($email);
         if (is_array($out) && !isset($out['error'])) {
             $lists = array();
