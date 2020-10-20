@@ -66,7 +66,7 @@ $mailchimpConfigData = array(
     array(
         'name' => 'def_list',
         'default_value' => '',
-        'type' => 'text',
+        'type' => 'select',
         'subgroup' => 0,
         'fieldset' => 0,
         'selection_array' => 0,
@@ -129,7 +129,6 @@ $mailchimpConfigData = array(
         'set' => true,
         'group' => 'mailchimp',
     ),
-
 
     array(
         'name' => 'fs_webhook',
