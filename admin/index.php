@@ -121,11 +121,16 @@ function MLCH_adminMenu()
             'text' => $LANG_ADMIN['admin_home'],
         ),
     );
-    $retval .= COM_startBlock($pi_title, '',
-                COM_getBlockTemplate('_admin_block', 'header'));
+    $retval .= COM_startBlock(
+        $pi_title,
+        '',
+        COM_getBlockTemplate('_admin_block', 'header')
+    );
     $retval .= ADMIN_createMenu(
-            $menu_arr, $LANG_MLCH['instr_admin'],
-            plugin_geticon_mailchimp());
+        $menu_arr,
+        '',
+        plugin_geticon_mailchimp()
+    );
     $T = new \Template(MLCH_PI_PATH . '/templates');
     $T->set_file('funcs', 'maint.thtml');
     $T->set_var('admin_url', MLCH_ADMIN_URL . '/index.php');
