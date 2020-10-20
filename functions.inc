@@ -324,6 +324,12 @@ function plugin_user_changed_mailchimp($uid)
 {
     global $_USER, $_CONF_MLCH;
 
+    static $alreadyDone = NULL;
+    if ($alreadyDone) {
+        return;
+    }
+    $alreadyDone = true;
+
     if ($uid == $_USER['uid']) {
         // Logged-in user saving their profile, double opt-in not needed unless
         // configured to require it anyway
