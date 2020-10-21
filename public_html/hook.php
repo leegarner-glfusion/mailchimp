@@ -54,8 +54,6 @@ case 'subscribe':
 
         // Update the mailing list segment, if possible.
         // This wouldn't be updated by subscriptions via Mailchimp form.
-        $merge_vars = array();
-        $memstatus = '';
         $status = LGLIB_invokeService(
             'membership', 'mailingSegment',
             array(
@@ -65,13 +63,12 @@ case 'subscribe':
             $msg
         );
         if ($status == PLG_RET_OK) {
-            $memstatus = $segment;
-            $merge_vars['MEMSTATUS'] = $memstatus;  // always update
+            Mailchimp\MergeFields::setMemStatus($segment);
         }
         $api = Mailchimp\API::getInstance();
         $params = array(
             'email' => $email,
-            'merge_fields' => $merge_vars,
+            'merge_fields' => Mailchimp\MergeFields::get(),
         );
         $status = $api->updateMember($email, $list_id, $params);
         //Mailchimp\Logger::Audit(print_r($status,true));

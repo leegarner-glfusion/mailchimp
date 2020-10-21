@@ -385,6 +385,7 @@ class Subscriber
             return false;
         }
 
+        MergeFields::clear();
         if ($dbl_opt !== false) {
             $dbl_opt = true;
         }
@@ -395,7 +396,6 @@ class Subscriber
             $uid = self::getUid($email);
         }
 
-        $merge_vars = array();
         $fname = '';
         $lname = '';
         // Get the first and last name merge values.
@@ -425,8 +425,8 @@ class Subscriber
 
             // only update if there is data (might be values in the list not in
             // the local db)
-            if (!empty($fname)) $merge_vars['FNAME'] = $fname;
-            if (!empty($lname)) $merge_vars['LNAME'] = $lname;
+            if (!empty($fname)) MergeFields::add('FNAME', $fname);
+            if (!empty($lname)) MergeFields::add('LNAME', $lname);
             // Get the membership status of this subscriber from the Membership
             // plugin, if available. This goes into the merge_vars to segment the
             // list by current, former and nonmember status
@@ -440,11 +440,8 @@ class Subscriber
                 $msg
             );
             if ($status == PLG_RET_OK) {
-                $merge_vars['MEMSTATUS'] = $segment;    // always update
+                MergeFields::setMemStatus($segment):    // always update
             }
-        } else {
-            // Anonymous user. No merge vars available, and must have valid email.
-            $merge_vars = NULL;
         }
         if (empty($email)) return false;    // Can't have an empty email address
 
@@ -453,7 +450,7 @@ class Subscriber
         $params = array(
             'id' => $list,
             'email_address' => $email,
-            'merge_fields' => $merge_vars,
+            'merge_fields' => MergeFields::get(),
             'email_type' => 'html',
             'status' => $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed',
             'double_optin' => $dbl_opt,

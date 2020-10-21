@@ -65,6 +65,7 @@ $LANG_confignames['mailchimp'] = array(
     'webhook_handleunsub' => 'Webhook handles removals?',
     'webhook_handleupemail' => 'Update user email when Mailchimp email changes?',
     'log_level' => 'Log Level',
+    'mem_status_fldname' => 'Membership Status Merge Field Name',
 );
 
 $LANG_configsubgroups['mailchimp'] = array(

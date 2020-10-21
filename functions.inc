@@ -459,10 +459,9 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
     if ($info !== NULL && !empty($info['list_segment'])) {       // got some information
         $Sub = Mailchimp\Subscriber::getInstance($id);
         $lists = $Sub->getSubscribed();
+        Mailchimp\MergeFields::setMemStatus($info['list_segment']);
         $params = array(
-            'merge_fields' => array(
-                'MEMSTATUS' => $info['list_segment'],
-            )
+            'merge_fields' => Mailchimp\MergeFields::get(),
         );
         foreach ($lists as $L) {
             $Sub->updateMailchimp($params, $info['email']);

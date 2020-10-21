@@ -69,7 +69,8 @@ function MLCH_importUsers()
         );
         if ($status == PLG_RET_OK) {
             // Add member status, only if not empty
-            $args['merge_fields'] = array('MEMSTATUS' => $segment);
+            Mailchimp\MergeFields::setMemStatus($segment);
+            $args['merge_fields'] = Mailchimp\MergeFields::get();
         }
         $mc_status = $api->subscribe($A['email'], $args, $list_id);
         if ($api->success()) {
