@@ -309,7 +309,7 @@ class API
         $status = false;
         if (!is_array($lists)) $lists = array($lists);
         if (empty($lists)) return true;     // no lists specified, consider success
-        $email = $this->subscriberhash($email);
+        $email = $this->subscriberHash($email);
         foreach ($lists as $list_id) {
             $status = $this->delete("/lists/$list_id/members/$email");
         }
@@ -327,12 +327,79 @@ class API
      */
     public function subscribe($email, $args=array(), $lists=array())
     {
-        if (!is_array($lists)) $lists = array($lists);
-        if (empty($lists)) return true;
-        if (!isset($args['email_address'])) $args['email_address'] = $email;
-        $hash = $this->subscriberhash($email);
+        if (empty($lists)) {
+            return true;
+        } elseif (!is_array($lists)) {
+            $lists = array($lists);
+        }
+        if (!isset($args['email_address'])) {
+            $args['email_address'] = $email;
+        }
+        $hash = $this->subscriberHash($email);
         foreach ($lists as $list_id) {
             $status = $this->post("/lists/$list_id/members/", $args);
+            //$status = $this->put("/lists/$list_id/members/$hash", $args);
+        }
+        return $status;
+    }
+
+
+    /**
+     * Get the tags associated with a subscriber.
+     *
+     * @param   string  $email      Subscriber email address
+     * @param   string  $list_id    Mailing list ID
+     * @return  array       Array of tags
+     */
+    public function getTags($email, $list_id='')
+    {
+        global $_CONF_MLCH;
+
+        $retval = array();
+        if (empty($list_id)) {
+           if (!empty($_CONF_MLCH['def_list'])) {
+               $list_id = $_CONF_MLCH['def_list'];
+           } else {
+               return $retval;
+           }
+        }
+        $hash = $this->subscriberHash($email);
+        $tags = $this->get("/lists/$list_id/members/$hash/tags");
+        if (isset($tags['tags']) && is_array($tags['tags'])) {
+            foreach ($tags['tags'] as $tag) {
+                $retval[] = $tag['name'];
+            }
+        }
+        return $retval;
+    }
+
+
+    /**
+     * Update a subscriber's tags.
+     *
+     * @param   string  $email  Email address
+     * @param   array   $tags   Array of tags (name=>active)
+     * @param   array   $lists  Array of email lists
+     */
+    public function updateTags($email, $tags, $lists=array())
+    {
+        // Use the default mailing list if none supplied.
+        if (empty($lists)) {
+            return true;
+        } elseif (!is_array($lists)) {
+            $lists = array($lists);
+        }
+        if (empty($tags) || !is_array($tags)) {
+            return false;
+        }
+        $args = array(
+            'tags' => $tags,
+            'is_syncing' => true,
+        );
+        $hash = $this->subscriberHash($email);
+        foreach ($lists as $list_id) {
+            $status = $this->post("/lists/$list_id/members/$hash/tags", $args);
+            var_dump($this);die;
             //$status = $this->put("/lists/$list_id/members/$hash", $args);
         }
         return $status;
