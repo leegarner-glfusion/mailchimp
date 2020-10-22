@@ -205,7 +205,6 @@ class Subscriber
                 ),
                 $output, $svc_msg
             );
-            var_dump($output);die;
             if ($status == PLG_RET_OK) $this->lastname = $output;
             if ($this->lastname == '') {    // still not found?
                 $this->lastname = $this->fullname;
@@ -236,7 +235,6 @@ class Subscriber
                 ),
                 $output, $svc_msg
             );
-            var_dump($output);
             if ($status == PLG_RET_OK) {
                 $this->lastname = $output;
             }
@@ -306,6 +304,30 @@ class Subscriber
             return false;
         }
         return true;
+    }
+
+
+    /**
+     * Update the tags for a subscriber.
+     *
+     * @param   array   $tags   Array of tagname=>tagstatus values
+     * @param   array|string    $lists  List IDs to update
+     * @return  boolean     Status of API::updateTags()
+     */
+    public function updateTags($tags, $lists='')
+    {
+        $vars = array();
+        foreach ($tags as $name=>$status) {
+            $vars[] = array(
+                'name' => $name,
+                'status' => $status,
+            );
+        }
+        if (empty($vars)) {
+            return;
+        }
+        $api = API::getInstance();
+        return $api->updateTags($this->email, $vars, $lists);
     }
 
 
@@ -440,7 +462,7 @@ class Subscriber
                 $msg
             );
             if ($status == PLG_RET_OK) {
-                MergeFields::setMemStatus($segment):    // always update
+                MergeFields::setMemStatus($segment);    // always update
             }
         }
         if (empty($email)) return false;    // Can't have an empty email address

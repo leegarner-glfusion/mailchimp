@@ -81,6 +81,7 @@ spl_autoload_register(function($class)
         }
     }
 });
+use Mailchimp\MergeFields;
 
 
 /**
@@ -295,31 +296,29 @@ function plugin_user_changed_mailchimp($uid)
         isset($_POST['mailchimp_subscribe']) &&
         $_POST['mailchimp_oldsub'] == '0'
     ) {
-        //MLCH_subscribe($uid, $_POST['email'], '', $dbl_optin);
         Mailchimp\Subscriber::subscribe($uid, $_POST['email'], '', $dbl_optin);
     } elseif (
         !isset($_POST['mailchimp_subscribe']) &&
         $_POST['mailchimp_oldsub'] == '1'
     ) {
-        //MLCH_unsubscribe($uid, $_POST['email']);
         Mailchimp\Subscriber::unsubscribe($uid, $_POST['email']);
     }
-    // Get the existing email address to update Mailchimp
-    /*$fname = LGLib\NameParser::F($_POST['fullname']);
-    $lname = LGLib\NameParser::L($_POST['fullname']);
 
-    // Update Mailchimp from the new parameters.
-    // Don't worry about the return value, nothing to be done if if fails.
-    $U->updateMailchimp(
-        array(
-            'merge_vars' => array(
-                'new-email' => $_POST['email'],
-                'FNAME' => $fname,
-                'LNAME' => $lname,
-            ),
-        ),
-        $_POST['mailchimp_old_email']
-    );*/
+    // Update the name merge fields if changed
+    if ($_POST['fullname'] != $_POST['mailchimp_old_fullname']) {
+        // Update Mailchimp from the new parameters.
+        // Don't worry about the return value, nothing to be done if if fails.
+        MergeFields::add('FNAME', LGLib\NameParser::F($_POST['fullname']));
+        MergeFields::add('LNAME', LGLib\NameParser::L($_POST['fullname']));
+    }
+    $params = array();
+    if (!empty(MergeFields::get())) {
+        $params['merge_fields'] = MergeFields::get();
+    }
+
+    if (!empty($params)) {
+        $U->updateMailchimp($params, $_POST['email']);
+    }
 }
 
 
@@ -385,6 +384,9 @@ function plugin_itemdeleted_mailchimp($id, $type)
 
 /**
  * Get information from other plugins when an item is saved.
+ * This gets the mailing list merge fields and tags.
+ * If a single string is returned for list_segment then the MEMSTATUS
+ * merge field set. Otherwise any number of merge fields and tags is supported.
  *
  * @param   string  $id     Item ID
  * @param   string  $type   Item Type
@@ -392,32 +394,53 @@ function plugin_itemdeleted_mailchimp($id, $type)
  */
 function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
 {
-    $A = explode(':', $type);
-    $type = $A[0];  // plugin name
-    $subtype = isset($A[1]) ? $A[1] : '';   // plugin item type, if any
-
     $info = PLG_getItemInfo(
-        $type, $id,
+        $type,
+        $id,
         'id,uid,list_segment,email,fullname',
-        0,
-        array(
-            'subtype' => $subtype,
-        )
+        0
     );
-    //var_dump($info);die;
+    if (!is_array($info) || !isset($info['id'])) {
+        return;
+    }
+    $Sub = Mailchimp\Subscriber::getInstance($info['id']);
+    $lists = $Sub->getSubscribed();
+    //var_dump($lists);die;
+    if (empty($lists)) {
+        // No lists to update
+        return;
+    }
+
+    $merge_fields = array();
+    $tags = array();
     if ($info !== NULL && !empty($info['list_segment'])) {       // got some information
-        $Sub = Mailchimp\Subscriber::getInstance($id);
-        $lists = $Sub->getSubscribed();
-        Mailchimp\MergeFields::setMemStatus($info['list_segment']);
-        $merge_fields = Mailchimp\MergeFields::get();
+        if (is_array($info['list_segment'])) {
+            if (isset($info['list_segment']['merge_fields'])) {
+                foreach ($info['list_segment']['merge_fields'] as $key=>$val) {
+                    MergeFields::add($key, $val);
+                }
+                $merge_fields = MergeFields::get();
+            } elseif (isset($info['list_segment']['tags'])) {
+                $tags = $info['list_segment']['tags'];
+            }
+        } else {
+            // old-style, just the string returned from Membership.
+            $merge_fields = array(
+                'MEMSTATUS' => $info['list_segment'],
+            );
+        }
         if (!empty($merge_fields)) {
             $params = array(
-                'merge_fields' => Mailchimp\MergeFields::get(),
+                'merge_fields' => $merge_fields,
             );
             foreach ($lists as $L) {
                 $Sub->updateMailchimp($params, $info['email']);
             }
         }
+        if (!empty($tags)) {
+            $Sub->updateTags($tags, $lists);
+        }
+
     }
 }
 
