@@ -57,6 +57,7 @@ case 'subscribe':
         $status = LGLIB_invokeService(
             'membership', 'mailingSegment',
             array(
+                'version' => $_CONF_MLCH['pi_version'],
                 'email' => $email,
             ),
             $segment,

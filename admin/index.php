@@ -57,6 +57,7 @@ function MLCH_importUsers()
     while ($A = DB_fetchArray($result, false)) {
         $status = PLG_invokeService('membership', 'mailingSegment',
             array(
+                'version' => $_CONF_MLCH['pi_version'],
                 'uid'   => $A['u_uid'],
                 'email' => $A['email'],
             ),
