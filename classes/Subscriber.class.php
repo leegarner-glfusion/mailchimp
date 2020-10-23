@@ -482,18 +482,25 @@ class Subscriber
         );
         $mc_status = $api->subscribe($email, $params, $list);
         if (!$api->success()) {
-            Logger::Audit("Failed to subscribe $email to $list. Error: " .
-                $api->getLastError(), true);
             $retval = false;
-        } else {
-            if ($uid > 1) {
-                // already instantiated above
-                $U->updateCache();
+            Logger::Audit(
+                "Failed to subscribe $email to $list. Error: " . $api->getLastError(),
+                true
+            );
+            $body = json_decode($api->getLastResponse()['body'],true);
+            if ($body && $body['title'] == 'Member Exists') {
+                // OK if member already exists.
+                $retval = true;
             }
+        } else {
+            $retval = true;
             $msg = $dbl_opt ? $LANG_MLCH['dbl_optin_required'] :
                 $LANG_MLCH['no_dbl_optin'];
             Logger::Audit("Subscribed $email to $list." . $msg);
-            $retval = true;
+        }
+        if ($retval && $uid > 1) {
+            // already instantiated above
+            $U->updateCache();
         }
         return $retval;
     }
@@ -529,18 +536,19 @@ class Subscriber
         if ($api->success()) {
             // List_NotSubscribed error is ok
             Logger::Audit("Unsubscribed $email from $list");
-            // Delete records from cache.
-            $sql = "INSERT INTO {$_TABLES['mailchimp_cache']} SET
-                    uid = $uid, listid = '$list', subscribed = 0
-                ON DUPLICATE KEY UPDATE
-                    subscribed=0";
-            DB_query($sql, 1);
             $retval = true;
         } else {
             Logger::Audit("Failed to unsubscribe $email from $list. Error" .
                 $api->getLastError());
             $retval = false;
         }
+        // Update cache regardless of Mailchimp result.
+        // Errors could happen if the user doesn't exist in MC.
+        $sql = "INSERT INTO {$_TABLES['mailchimp_cache']} SET
+                uid = $uid, listid = '$list', subscribed = 0
+            ON DUPLICATE KEY UPDATE
+                subscribed=0";
+        DB_query($sql, 1);
         return $retval;
     }
 
