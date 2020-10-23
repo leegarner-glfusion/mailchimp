@@ -12,7 +12,7 @@
 
 $_SQL['mailchimp_cache'] = "CREATE TABLE {$_TABLES['mailchimp_cache']} (
   `uid` int(11) NOT NULL,
-  `listid` varchar(255) DEFAULT NULL,
+  `listid` varchar(255) NOT NULL,
   `subscribed` tinyint(1) unsigned default 1,
   PRIMARY KEY (`uid`, `listid`)
 )";
