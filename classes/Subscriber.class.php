@@ -177,9 +177,11 @@ class Subscriber
             $res = DB_query($sql);
             if ($res) {
                 $U = DB_fetchArray($res, false);
-                $this->username = $U['username'];
-                $this->fullname = $U['fullname'];
-                $this->email = $U['email'];
+                if (is_array($U)) {
+                    $this->username = $U['username'];
+                    $this->fullname = $U['fullname'];
+                    $this->email = $U['email'];
+                }
             }
         }
     }
