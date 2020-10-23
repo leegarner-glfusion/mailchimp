@@ -1,5 +1,5 @@
 {# begin {templatelocation} #}
-<form id="otherfuncs" class="uk-form" method="post" action="{admin_url}">
+<form id="mc_maint" class="uk-form" method="post" action="{admin_url}">
     <div class="uk-width-2-3 floatleft">
         {$LANG_MLCH['dscp_sync_cache']}
     </div>

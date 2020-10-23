@@ -5,4 +5,6 @@
   margin-right: 0.5em;
   display: block
 }
-
+#mc_maint button {
+    margin-bottom: 25px;
+}
