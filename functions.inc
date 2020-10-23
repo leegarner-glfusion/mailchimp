@@ -405,7 +405,6 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
     }
     $Sub = Mailchimp\Subscriber::getInstance($info['id']);
     $lists = $Sub->getSubscribed();
-    //var_dump($lists);die;
     if (empty($lists)) {
         // No lists to update
         return;
@@ -413,7 +412,7 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
 
     $merge_fields = array();
     $tags = array();
-    if ($info !== NULL && !empty($info['list_segment'])) {       // got some information
+    if (is_array($info) && isset($info['list_segment'])) {       // got some information
         if (is_array($info['list_segment'])) {
             if (isset($info['list_segment']['merge_fields'])) {
                 foreach ($info['list_segment']['merge_fields'] as $key=>$val) {
@@ -429,13 +428,14 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
                 'MEMSTATUS' => $info['list_segment'],
             );
         }
+
         if (!empty($merge_fields)) {
             $params = array(
                 'merge_fields' => $merge_fields,
             );
-            foreach ($lists as $L) {
-                $Sub->updateMailchimp($params, $info['email']);
-            }
+        }
+        foreach ($lists as $L) {
+            $Sub->updateMailchimp($params, $info['email']);
         }
         if (!empty($tags)) {
             $Sub->updateTags($tags, $lists);
