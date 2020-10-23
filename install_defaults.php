@@ -29,6 +29,7 @@ if (!defined ('GVERSION')) {
  *
  * @global  array
  */
+global $mailchimpConfigData;
 $mailchimpConfigData = array(
     array(
         'name' => 'sg_main',
