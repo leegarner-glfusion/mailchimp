@@ -337,8 +337,8 @@ class API
         }
         $hash = $this->subscriberHash($email);
         foreach ($lists as $list_id) {
-            $status = $this->post("/lists/$list_id/members/", $args);
-            //$status = $this->put("/lists/$list_id/members/$hash", $args);
+            //$status = $this->post("/lists/$list_id/members/", $args);
+            $status = $this->put("/lists/$list_id/members/$hash", $args);
         }
         return $status;
     }
