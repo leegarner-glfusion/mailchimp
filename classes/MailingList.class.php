@@ -64,7 +64,7 @@ class MailingList
                 $list_data = $api->lists();
                 if (is_array($list_data)) {
                     foreach ($list_data['lists'] as $key => $list) {
-                        $members = $api->listMembers($list['id'], 'subscribed', NULL, 0, 0);
+                        $members = $api->listMembers($list['id']);
                         $lists[$list['id']] = new self(array(
                             'id' => $list['id'],
                             'name' => $list['name'],

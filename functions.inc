@@ -483,7 +483,7 @@ function phpblock_mailchimp_sub()
 
     $Sub = Mailchimp\Subscriber::getInstance($_USER['uid']);
     if ($Sub->isSubscribed()) {
-        if ($c > 0) return '';
+        return '';
     }
 
     $T = new Template(__DIR__ . '/templates/');
@@ -697,7 +697,7 @@ function MLCH_getLists()
             $list_data = $api->lists();
             if (is_array($list_data)) {
                 foreach ($list_data['lists'] as $key => $list) {
-                    $members = $api->listMembers($list['id'], 'subscribed', NULL, 0, 0);
+                    $members = $api->listMembers($list['id']);
                     $lists[$list['id']] = array(
                         'id' => $list['id'],
                         'name' => $list['name'],

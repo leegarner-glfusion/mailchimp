@@ -318,6 +318,9 @@ class Subscriber
      */
     public function updateTags($tags, $lists='')
     {
+        if ($this->id < 2) {
+            return false;
+        }
         $vars = array();
         foreach ($tags as $name=>$status) {
             $vars[] = array(
@@ -422,6 +425,7 @@ class Subscriber
 
         $fname = '';
         $lname = '';
+        $tags = array();
         // Get the first and last name merge values.
         if ($uid > 1) {
             $U = self::getInstance($uid);
@@ -460,11 +464,24 @@ class Subscriber
                     'uid' => $uid,
                     'email' => $email,
                 ),
-                $segment,
+                $info,
                 $msg
             );
             if ($status == PLG_RET_OK) {
-                MergeFields::setMemStatus($segment);    // always update
+                if (is_array($info) && isset($info['list_segment'])) {
+                    if (is_array($info['list_segment'])) {
+                        if (isset($info['list_segment']['merge_fields'])) {
+                            foreach ($info['list_segment']['merge_fields'] as $key=>$val) {
+                                MergeFields::add($key, $val);
+                            }
+                        } elseif (isset($info['list_segment']['tags'])) {
+                            $tags = $info['list_segment']['tags'];
+                        }
+                    } else {
+                        // old-style, just the string returned from Membership.
+                        MergeFields::add('MEMSTATUS', $info['list_segment']);
+                    }
+                }
             }
         }
         if (empty($email)) return false;    // Can't have an empty email address
@@ -502,6 +519,12 @@ class Subscriber
             // already instantiated above
             $U->updateCache();
         }
+
+        // update any tags retrieved.
+        if (!empty($tags)) {
+            self::getInstance($uid)->updateTags($tags, $list);
+        }
+
         return $retval;
     }
 
@@ -608,20 +631,20 @@ class Subscriber
         }
 
         $offset = 0;
-        $pages = ceil(($List->getMemberCount() / 100));
+        $perpage = 100;
+        $pages = ceil(($List->getMemberCount() / $perpage));
         $subscribers = array();
         $sql_values = array();
         // Load up an array of subscribers that can be checked with isset()
-        $offset = 0;
         for ($i = 0; $i < $pages; $i++) {
-            $mc_status = $api->listMembers($list_id, 'subscribed', NULL, $offset, 100);
+            $mc_status = $api->listMembers($list_id, array('offset'=>$offset, $count=>$perpage));
             if (!$api->success()) {
                 return __FUNCTION__ . ":: Error requesting list information";
             }
             foreach ($mc_status['members'] as $d) {
                 $subscribers[$d['email_address']] = 1;
             }
-            $offset += 100;
+            $offset += $perpage;
         }
 
         // Now get all the site user accounts and see if their email

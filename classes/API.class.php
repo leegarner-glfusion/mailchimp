@@ -248,15 +248,35 @@ class API
      * @param   integer $count      Maximum number of members to retrieve.
      * @return  array       Array of data
      */
-    public function listMembers($list_id, $status='subscribed', $since=NULL, $offset=0, $count=100)
+    public function listMembers($list_id, $opts=array())
     {
-        if ($since !== NULL) {
-            $dt = new \Date($since);
-            $since = '&since_last_changed=' . $dt->format(\DateTime::ATOM);
-        } else {
-            $since = '';
+        $params = array(
+            'count' => 10,
+            'offset' => 0,
+            'status' => 'subscribed',
+        );
+        foreach ($opts as $key=>$val) {
+            switch ($key) {
+            case 'unsubscribed_since':
+                $params['status'] = 'unsubscribed';
+            case 'since_last_changed':
+            case 'since_timestamp_opt':
+            case 'before_last_changed':
+                $dt = new \Date($val);
+                $val = '&since_last_changed=' . $dt->format(\DateTime::ATOM);
+                break;
+            case 'count':
+                $val = min($val, 1000);
+                break;
+            }
+            $params[$key] = urlencode($val);
         }
-        return $this->get("lists/$list_id/members?count={$count}&offset={$offset}{$since}");
+        $url = array();
+        foreach ($params as $key=>$val) {
+            $url[] = $key . '=' . $val;
+        }
+        $url = implode('&', $url);
+        return $this->get("lists/$list_id/members?$url");
     }
 
 
