@@ -250,7 +250,13 @@ class API
      */
     public function listMembers($list_id, $status='subscribed', $since=NULL, $offset=0, $count=100)
     {
-        return $this->get("lists/$list_id/members");
+        if ($since !== NULL) {
+            $dt = new \Date($since);
+            $since = '&since_last_changed=' . $dt->format(\DateTime::ATOM);
+        } else {
+            $since = '';
+        }
+        return $this->get("lists/$list_id/members?count={$count}&offset={$offset}{$since}");
     }
 
 
