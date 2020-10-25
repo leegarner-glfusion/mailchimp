@@ -397,7 +397,7 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
     $info = PLG_getItemInfo(
         $type,
         $id,
-        'id,uid,list_segment,email,fullname',
+        'id,uid,merge_fields,email,fullname',
         0
     );
     if (!is_array($info) || !isset($info['id'])) {
@@ -410,25 +410,15 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
         return;
     }
 
-    $merge_fields = array();
     $tags = array();
-    if (is_array($info) && isset($info['list_segment'])) {       // got some information
-        if (is_array($info['list_segment'])) {
-            if (isset($info['list_segment']['merge_fields'])) {
-                foreach ($info['list_segment']['merge_fields'] as $key=>$val) {
-                    MergeFields::add($key, $val);
-                }
-                $merge_fields = MergeFields::get();
-            } elseif (isset($info['list_segment']['tags'])) {
-                $tags = $info['list_segment']['tags'];
+    if (is_array($info) && isset($info['merge_fields'])) {
+        if (is_array($info['merge_fields'])) {
+            foreach ($info['merge_fields'] as $key=>$val) {
+                MergeFields::add($key, $val);
             }
-        } else {
-            // old-style, just the string returned from Membership.
-            $merge_fields = array(
-                'MEMSTATUS' => $info['list_segment'],
-            );
         }
 
+        $merge_fields = MergeFields::get();
         if (!empty($merge_fields)) {
             $params = array(
                 'merge_fields' => $merge_fields,
@@ -437,9 +427,9 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
         foreach ($lists as $L) {
             $Sub->updateMailchimp($params, $info['email']);
         }
-        if (!empty($tags)) {
+        /*if (!empty($tags)) {
             $Sub->updateTags($tags, $lists);
-        }
+        }*/
 
     }
 }

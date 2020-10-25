@@ -75,6 +75,45 @@ class Mergefields
         }
     }
 
+
+    /**
+     * Get the merge fields from plugins.
+     * Each plugin returns an array of name=>value pairs.
+     * Merge fields are added to the static array to be retrieved via
+     * `self::get()`.
+     *
+     * @param   integer $uid    User ID
+     */
+    public static function getPlugins($uid)
+    {
+        /*
+         * Testing PR#408 to return values from PLG_callFunctionForAllPlugins().
+        foreach (
+            PLG_callFunctionForAllPlugins('getMergeFields', array(1=>$uid))
+            as $pi_name=>$data) {
+            if (is_array($data)) {
+                foreach ($data as $name=>$value) {
+                    self::add($name, $value);
+                }
+            }
+        }
+        return;*/
+
+        global $_PLUGINS;
+
+        foreach ($_PLUGINS as $pi_name) {
+            $output = PLG_callFunctionForOnePlugin(
+                'plugin_getMergeFields_' . $pi_name,
+                array(1 => $uid)
+            );
+            if (is_array($output)) {
+                foreach ($output as $name=>$value) {
+                    self::add($name, $value);
+                }
+            }
+        }
+    }
+
 }
 
 ?>

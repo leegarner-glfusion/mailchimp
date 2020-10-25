@@ -79,8 +79,15 @@ class Subscriber
      */
     public static function getInstance($uid, $email='')
     {
-        global $_USERS;
+        global $_USERS, $_TABLES;
 
+        if ($uid < 2) {
+            $uid = (int)DB_getItem(
+                $_TABLES['users'],
+                'uid',
+                "email='" . DB_escapeString($email) . "'"
+            );
+        }
         if ($uid > 1) {
             $cache_key = 'uid_' . $uid;
             $obj = Cache::get($cache_key);
@@ -90,6 +97,7 @@ class Subscriber
             }
         } else {
             $obj = new self;
+            $obj->setEmail($email);
         }
         return $obj;
     }
@@ -141,7 +149,12 @@ class Subscriber
         $this->uid = (int)$A['uid'];
         $this->listid = $A['listid'];
         $this->subscribed = (int)$A['subscribed'];
-        if ($this->fullname == '') $this->fullname = $this->username;
+        $this->username = $A['username'];
+        $this->email = $A['email'];
+        $this->fullname = $A['fullname'];
+        if ($this->fullname == '') {
+            $this->fullname = $this->username;
+        }
     }
 
 
@@ -154,19 +167,20 @@ class Subscriber
     {
         global $_TABLES, $_USER;
 
-        $sql = "SELECT * from {$_TABLES['mailchimp_cache']}
-                WHERE uid = $this->uid";
+        $sql = "SELECT mc.*, u.username, u.fullname, u.email
+            FROM {$_TABLES['users']} u
+            LEFT JOIN {$_TABLES['mailchimp_cache']} mc
+                ON mc.uid = u.uid
+            WHERE u.uid = $this->uid";
         $res = DB_query($sql);
-        if ($res) {
-            while ($A = DB_fetchArray($res, false)) {
-                $this->lists[$A['listid']] = $A['subscribed'];
-            }
-        }
-        if (!empty($A)) {
+        if ($res && DB_numRows($res) == 1) {
+            $A = DB_fetchArray($res, false);
             $this->setVars($A);
+        } else {
+            $this->uid = 0;
         }
 
-        // Get the user name from the array if it is the current user,
+/*        // Get the user name from the array if it is the current user,
         // otherwise look in the DB.
         if ($this->uid == $_USER['uid']) {
             $this->username = $_USER['username'];
@@ -183,7 +197,7 @@ class Subscriber
                     $this->email = $U['email'];
                 }
             }
-        }
+        }*/
     }
 
 
@@ -252,12 +266,16 @@ class Subscriber
 
 
     /**
-     * Get all the subscribed list IDs.
+     * Get all the subscribed list IDs for this subscriber.
      *
      * @return  array   Array of list IDs.
      */
     public function getSubscribed()
     {
+        if (!$this->isValid()) {
+            return false;
+        }
+
         $retval = array();
         foreach ($this->lists as $id=>$subscribed) {
             if ($subscribed) $retval[] = $id;
@@ -364,7 +382,7 @@ class Subscriber
      * @param   string  $email  Email address
      * @return  integer $uid    User ID, zero if not found
      */
-    public static function getUid($email)
+    public static function getUidByEmail($email)
     {
         global $_TABLES, $_USER;
 
@@ -376,6 +394,17 @@ class Subscriber
             'uid',
             "email='" . DB_escapeString($email) . "'"
         );
+    }
+
+
+    /**
+     * Get the subscriber's user ID.
+     *
+     * @return  integer     User ID.
+     */
+    public function getUid()
+    {
+        return (int)$this->uid;
     }
 
 
@@ -420,7 +449,7 @@ class Subscriber
 
         // Try to get the user ID from the email address if not given
         if ($uid == 0) {
-            $uid = self::getUid($email);
+            $uid = self::getUidByEmail($email);
         }
 
         $fname = '';
@@ -429,6 +458,7 @@ class Subscriber
         // Get the first and last name merge values.
         if ($uid > 1) {
             $U = self::getInstance($uid);
+
             if (!empty($email)) {
                 $U->setEmail($email);
             } else {
@@ -455,34 +485,7 @@ class Subscriber
             // the local db)
             if (!empty($fname)) MergeFields::add('FNAME', $fname);
             if (!empty($lname)) MergeFields::add('LNAME', $lname);
-            // Get the membership status of this subscriber from the Membership
-            // plugin, if available. This goes into the merge_vars to segment the
-            // list by current, former and nonmember status
-            $status = LGLIB_invokeService(
-                'membership', 'mailingSegment',
-                array(
-                    'uid' => $uid,
-                    'email' => $email,
-                ),
-                $info,
-                $msg
-            );
-            if ($status == PLG_RET_OK) {
-                if (is_array($info) && isset($info['list_segment'])) {
-                    if (is_array($info['list_segment'])) {
-                        if (isset($info['list_segment']['merge_fields'])) {
-                            foreach ($info['list_segment']['merge_fields'] as $key=>$val) {
-                                MergeFields::add($key, $val);
-                            }
-                        } elseif (isset($info['list_segment']['tags'])) {
-                            $tags = $info['list_segment']['tags'];
-                        }
-                    } else {
-                        // old-style, just the string returned from Membership.
-                        MergeFields::add('MEMSTATUS', $info['list_segment']);
-                    }
-                }
-            }
+            MergeFields::getPlugins($uid);
         }
         if (empty($email)) return false;    // Can't have an empty email address
 
@@ -518,11 +521,6 @@ class Subscriber
         if ($retval && $uid > 1) {
             // already instantiated above
             $U->updateCache();
-        }
-
-        // update any tags retrieved.
-        if (!empty($tags)) {
-            self::getInstance($uid)->updateTags($tags, $list);
         }
 
         return $retval;
@@ -706,6 +704,18 @@ class Subscriber
             $this->updateCache(true);
         }
         return $this->email;
+    }
+
+
+    /**
+     * Checks that a valid user record was found.
+     * Just checks that the user ID is not zero.
+     *
+     * @return  boolean     True if valid, False if not.
+     */
+    public function isValid()
+    {
+        return $this->uid > 0;
     }
 
 }   // class Subscriber
