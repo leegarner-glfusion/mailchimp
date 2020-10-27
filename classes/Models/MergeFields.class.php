@@ -11,49 +11,31 @@
  *              GNU Public License v2 or later
  * @filesource
  */
-namespace Mailchimp;
+namespace Mailchimp\Models;
 
 
 /**
  * Mailing list information class.
  * @package mailchimp
  */
-class Mergefields
+class MergeFields implements \ArrayAccess
 {
     /** Merge fields.
      * @var array */
-    private static $fields = array();
+    private $properties = array();
 
 
     /**
-     * Clear the merge fields array.
-     */
-    public static function clear()
-    {
-        self::$fields = array();
-    }
-
-
-    /**
-     * Add a merge field name=>value.
+     * Set a merge field name=>value. Fluid interface method.
      *
      * @param   string  $name   Field name
      * @param   string|array    $value  Field value
+     * @return  this
      */
-    public static function add($name, $value)
+    public function set($name, $value)
     {
-        self::$fields[$name] = $value;
-    }
-
-
-    /**
-     * Get the merge fields array to provide to Mailchimp.
-     *
-     * @return  array   Array of merge field name=>value pairs
-     */
-    public static function get()
-    {
-        return self::$fields;
+        $this->offsetSet($name, $value);
+        return $this;
     }
 
 
@@ -66,7 +48,7 @@ class Mergefields
     public static function setMemStatus($status)
     {
         global $_CONF_MLCH;
-
+echo "DEPRECATED"; die;
         if (
             isset($_CONF_MLCH['mem_status_fldname']) &&
             !empty($_CONF_MLCH['mem_status_fldname'])
@@ -84,7 +66,7 @@ class Mergefields
      *
      * @param   integer $uid    User ID
      */
-    public static function getPlugins($uid)
+    public function getPlugins($uid)
     {
         /*
          * Testing PR#408 to return values from PLG_callFunctionForAllPlugins().
@@ -93,7 +75,7 @@ class Mergefields
             as $pi_name=>$data) {
             if (is_array($data)) {
                 foreach ($data as $name=>$value) {
-                    self::add($name, $value);
+                    $this->set($name, $value);
                 }
             }
         }
@@ -108,10 +90,40 @@ class Mergefields
             );
             if (is_array($output)) {
                 foreach ($output as $name=>$value) {
-                    self::add($name, $value);
+                    $this->set($name, $value);
                 }
             }
         }
+    }
+
+    public function offsetSet($key, $value)
+    {
+        if ($value === NULL) {
+            unset($this->properties[$key]);
+        } else {
+            $this->properties[$key] = $value;
+        }
+    }
+
+    public function offsetExists($key)
+    {
+        return isset($this->properties[$key]);
+    }
+
+    public function offsetUnset($key)
+    {
+        unset($this->properties[$key]);
+    }
+
+    public function offsetGet($key)
+    {
+        return isset($this->properties[$key]) ? $this->properties[$key] : null;
+    }
+
+
+    public function toArray()
+    {
+        return $this->properties;
     }
 
 }

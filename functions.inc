@@ -71,17 +71,35 @@ define(MLCH_ADMIN_URL, $_CONF['site_admin_url'] . '/plugins/' .
 /** Define the path to the plugin. */
 define(MLCH_PI_PATH, __DIR__);
 
-spl_autoload_register(function($class)
+spl_autoload_register(function ($class)
 {
-    if (strpos($class, 'Mailchimp\\') === 0) {
-        $class = str_replace('Mailchimp\\', '', $class);
-        $path = __DIR__ . '/classes/' . $class . '.class.php';
-        if (file_exists($path)) {
-            include $path;
-        }
+    // project-specific namespace prefix
+    $prefix = 'Mailchimp\\';
+
+    // does the class use the namespace prefix?
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) {
+        // no, move to the next registered autoloader
+        return;
+    }
+
+    // base directory for the namespace prefix
+    $base_dir = __DIR__ . '/classes/';
+
+    // get the relative class name
+    $relative_class = substr($class, $len);
+
+    // replace the namespace prefix with the base directory, replace namespace
+    // separators with directory separators in the relative class name, append
+    // with .php
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.class.php';
+
+    // if the file exists, require it
+    if (file_exists($file)) {
+        require $file;
     }
 });
-use Mailchimp\MergeFields;
+use Mailchimp\Models\ApiParams;
 
 
 /**
@@ -308,16 +326,11 @@ function plugin_user_changed_mailchimp($uid)
     if ($_POST['fullname'] != $_POST['mailchimp_old_fullname']) {
         // Update Mailchimp from the new parameters.
         // Don't worry about the return value, nothing to be done if if fails.
-        MergeFields::add('FNAME', LGLib\NameParser::F($_POST['fullname']));
-        MergeFields::add('LNAME', LGLib\NameParser::L($_POST['fullname']));
-    }
-    $params = array();
-    if (!empty(MergeFields::get())) {
-        $params['merge_fields'] = MergeFields::get();
-    }
-
-    if (!empty($params)) {
-        $U->updateMailchimp($params, $_POST['email']);
+        $ApiParams = (new ApiParams)
+            ->setEmail($_POST['email'])
+            ->addMerge('FNAME', LGLib\NameParser::F($_POST['fullname']))
+            ->addMerge('LNAME', LGLib\NameParser::L($_POST['fullname']));
+        $U->updateMailchimp($ApiParams);
     }
 }
 
@@ -410,27 +423,24 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
         return;
     }
 
-    $tags = array();
-    if (is_array($info) && isset($info['merge_fields'])) {
-        if (is_array($info['merge_fields'])) {
-            foreach ($info['merge_fields'] as $key=>$val) {
-                MergeFields::add($key, $val);
-            }
-        }
-
-        $merge_fields = MergeFields::get();
-        if (!empty($merge_fields)) {
-            $params = array(
-                'merge_fields' => $merge_fields,
-            );
+    //$tags = array();
+    if (
+        is_array($info) && 
+        isset($info['merge_fields']) &&
+        is_array($info['merge_fields']) &&
+        !empty($info['merge_fields'])
+    ) {
+        $ApiParams = (new ApiParams)
+            ->setEmail($info['email']);
+        foreach ($info['merge_fields'] as $key=>$val) {
+            $ApiParams->addMerge($key, $val);
         }
         foreach ($lists as $L) {
-            $Sub->updateMailchimp($params, $info['email']);
+            $Sub->updateMailchimp($ApiParams);
         }
         /*if (!empty($tags)) {
             $Sub->updateTags($tags, $lists);
         }*/
-
     }
 }
 

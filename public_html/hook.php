@@ -19,6 +19,7 @@ if (!in_array('mailchimp', $_PLUGINS) || !MAILCHIMP_ACTIVE) {
     COM_404();
     exit;
 }
+use Mailchimp\Models\ApiParams;
 
 // If the admin has set a key value to be used by the webhook calls, and
 // that key isn't present or doesn't match, then do nothing
@@ -52,34 +53,21 @@ case 'subscribe':
             exit;
         }
 
-        // Update the mailing list segment, if possible.
-        // This wouldn't be updated by subscriptions via Mailchimp form.
-        $status = LGLIB_invokeService(
-            'membership', 'mailingSegment',
-            array(
-                'version' => $_CONF_MLCH['pi_version'],
-                'email' => $email,
-            ),
-            $segment,
-            $msg
-        );
-        if ($status == PLG_RET_OK) {
-            Mailchimp\MergeFields::setMemStatus($segment);
-        }
+        $U = Mailchimp\Subscriber::getInstance(0, $email);
         $api = Mailchimp\API::getInstance();
-        $params = array(
-            'email' => $email,
-            'merge_fields' => Mailchimp\MergeFields::get(),
-        );
+        $params = (new ApiParams)
+            ->setEmail($email)
+            ->setList($list_id)
+            ->mergePlugins($U->getUid())
+            ->toArray();
         $status = $api->updateMember($email, $list_id, $params);
         //Mailchimp\Logger::Audit(print_r($status,true));
         if (!$api->success()) {
             Mailchimp\Logger::Audit("Failed to update member status for $email. Error: " .
             $api->getLastError());
         }
-        $uid = Mailchimp\Subscriber::getUid($email);
-        if ($uid > 1) {
-            Mailchimp\Subscriber::getInstance($uid)->updateCache();
+        if ($U->getUid() > 1) {
+            $U->updateCache();
         }
         Mailchimp\Logger::Audit("Webhook $action: $email subscribed to $list_id");
     }
@@ -96,11 +84,7 @@ case 'cleaned':
             exit;
         }
         $uid = Mailchimp\Subscriber::getUid($email);
-        if ($uid < 2) {
-            Mailchimp\Logger::Audit("Webhook $action: Invalid user ID $uid from email $email");
-            exit;
-        }
-        if (!empty($email) && !empty($list_id)) {
+        if ($uid > 1 && !empty($email) && !empty($list_id)) {
             DB_delete(
                 $_TABLES['mailchimp_cache'],
                 array('uid', 'list'),
@@ -126,22 +110,24 @@ case 'upemail':
         $new_email = DB_escapeString($_POST['data']['new_email']);
 
         // Check that the new address isn't in use already
-        $uid = Mailchimp\Subscriber::getUid($new_email);
+        $uid = Mailchimp\Subscriber::getUidByEmail($new_email);
         if ($uid > 0) {
             Mailchimp\Logger::Audit("Webhook: new address $new_email already used by $uid");
             exit;
         }
 
         // Get the user ID belonging to the old address
-        $uid = Mailchimp\Subscriber::getUid($old_email);
+        $uid = Mailchimp\Subscriber::getUidByEmail($old_email);
         if ($uid < 2) {
             Mailchimp\Logger::Audit("Webhook: old address $new_email not found");
             exit;
         }
 
         // Perform the update
-        DB_query("UPDATE {$_TABLES['users']} SET email = '$new_email'
-                WHERE uid = $uid");
+        DB_query("UPDATE {$_TABLES['users']}
+            SET email = '$new_email'
+            WHERE uid = $uid"
+        );
         Mailchimp\Logger::Audit("Webhook: updated user $uid email from $old_email to $new_email");
     }
     break;

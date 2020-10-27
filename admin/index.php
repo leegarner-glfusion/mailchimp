@@ -22,6 +22,7 @@ if (!SEC_hasRights('mailchimp.admin')) {
     COM_404();
     exit;
 }
+use Mailchimp\Models\ApiParams;
 
 
 /**
@@ -55,25 +56,10 @@ function MLCH_importUsers()
     //USES_mailchimp_class_api();
     $api = Mailchimp\API::getInstance();
     while ($A = DB_fetchArray($result, false)) {
-        $status = PLG_invokeService('membership', 'mailingSegment',
-            array(
-                'version' => $_CONF_MLCH['pi_version'],
-                'uid'   => $A['u_uid'],
-                'email' => $A['email'],
-            ),
-            $segment,
-            $msg
-        );
-        $args = array(
-            'email_address' => $A['email'],
-            'status' => $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed',
-        );
-        if ($status == PLG_RET_OK) {
-            // Add member status, only if not empty
-            Mailchimp\MergeFields::setMemStatus($segment);
-            $args['merge_fields'] = Mailchimp\MergeFields::get();
-        }
-        $mc_status = $api->subscribe($A['email'], $args, $list_id);
+        $ApiParams = (new ApiParams)
+            ->setEmail($A['email'])
+            ->mergePlugins($A['uid']);
+        $mc_status = $api->subscribe($A['email'], $ApiParams, $list_id);
         if ($api->success()) {
             $cache_vals[$A['email']] = array('uid' => $A['u_uid'], 'sub' => 0);
             $success++;

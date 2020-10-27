@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Mailchimp;
+use Mailchimp\Models\ApiParams;
 
 
 /**
@@ -287,11 +288,11 @@ class Subscriber
     /**
      * Update user information at Mailchimp.
      *
-     * @param   araay   $params     Parameters to update
+     * @param   araay   $ApiParams  Parameters to send
      * @param   string  $email      Optional email, for anonymous users
      * @return  boolean     True on success, False on failure
      */
-    public function updateMailchimp($params, $email='')
+    public function updateMailchimp($ApiParams, $email='')
     {
         global $_CONF_MLCH;
 
@@ -301,25 +302,23 @@ class Subscriber
         }
 
         // Make sure the list ID is in the parameters.
-        if (!isset($params['id'])) {
-            $params['id'] = $_CONF_MLCH['def_list'];
+        /*if (!$ApiParams->offsetExists('id')) {
+            $ApiParams->set['id'] = $_CONF_MLCH['def_list'];
+        }*/
+        $list_id = $ApiParams->getList();
+        if (!empty($email)) {
+            $ApiParams->setEmail($email);
         }
-        $list_id = $params['id'];
-        if (empty($email)) {
-            $params['email_address'] = $this->getEmail();
-        } else {
-            $params['email_address'] = $email;
-        }
-        if (!isset($params['merge_fields'])) {
+        /*if (!isset($params['merge_fields'])) {
             // Make sure there's something for the merge parameters.
             $params['merge_fields'] = array();
-        }
+        }*/
         // other parameters and merge_vars set by caller
 
         //USES_mailchimp_class_api();
         //$api = new Mailchimp\Mailchimp($_CONF_MLCH['api_key']);
         $api = API::getInstance();
-        $out = $api->updateMember($email, $list_id, $params);
+        $out = $api->updateMember($email, $list_id, $ApiParams->toArray());
         if (!$api->success()) {
             return false;
         }
@@ -441,7 +440,6 @@ class Subscriber
             return false;
         }
 
-        MergeFields::clear();
         if ($dbl_opt !== false) {
             $dbl_opt = true;
         }
@@ -455,6 +453,7 @@ class Subscriber
         $fname = '';
         $lname = '';
         $tags = array();
+        $params = new ApiParams;
         // Get the first and last name merge values.
         if ($uid > 1) {
             $U = self::getInstance($uid);
@@ -483,23 +482,34 @@ class Subscriber
 
             // only update if there is data (might be values in the list not in
             // the local db)
-            if (!empty($fname)) MergeFields::add('FNAME', $fname);
-            if (!empty($lname)) MergeFields::add('LNAME', $lname);
-            MergeFields::getPlugins($uid);
+            if (!empty($fname)) $params->addMerge('FNAME', $fname);
+            if (!empty($lname)) $params->addMerge('LNAME', $lname);
+            $params->mergePlugins($uid);
         }
         if (empty($email)) return false;    // Can't have an empty email address
 
         // Process Subscription
         $api = API::getInstance();
-        $params = array(
+        $params
+            ->setEmail($email)
+            ->setList($list)
+            ->set('status', $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed')
+            ->setDoubleOptin($dbl_opt)
+            ->setUpdateExisting(true)
+            ->get();
+        /*$params = array(
             'id' => $list,
             'email_address' => $email,
-            'merge_fields' => MergeFields::get(),
             'email_type' => 'html',
             'status' => $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed',
             'double_optin' => $dbl_opt,
             'update_existing' => true,
         );
+        // Can't send an empty merge_fields array.
+        $merge_fields = MergeFields::get();
+        if (!empty($merge_fields)) {
+            $params['merge_fields'] = $merge_fields;
+        }*/
         $mc_status = $api->subscribe($email, $params, $list);
         if (!$api->success()) {
             $retval = false;
