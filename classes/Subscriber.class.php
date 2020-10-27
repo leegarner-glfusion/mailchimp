@@ -419,7 +419,7 @@ class Subscriber
         if (empty($list) && !empty($_CONF_MLCH['def_list'])) {
             $list = $_CONF_MLCH['def_list'];
         }
-        if (empty($list) || empty($this->email) {
+        if (empty($list) || empty($this->email)) {
             return false;
         }
 
