@@ -242,7 +242,9 @@ class ApiParams implements \ArrayAccess
 
     public function addMerge($key, $value)
     {
-        $this->properties['merge_fields'][$key] = $value;
+        if (!empty($value)) {
+            $this->properties['merge_fields'][$key] = $value;
+        }
         return $this;
     }
 
