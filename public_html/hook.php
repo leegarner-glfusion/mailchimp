@@ -110,15 +110,15 @@ case 'upemail':
         $new_email = DB_escapeString($_POST['data']['new_email']);
 
         // Check that the new address isn't in use already
-        $uid = Mailchimp\Subscriber::getUidByEmail($new_email);
-        if ($uid > 0) {
+        $newUser = Mailchimp\Subscriber::getInstance(0, $new_email);
+        if ($newUser->getUid() > 0) {
             Mailchimp\Logger::Audit("Webhook: new address $new_email already used by $uid");
             exit;
         }
 
         // Get the user ID belonging to the old address
-        $uid = Mailchimp\Subscriber::getUidByEmail($old_email);
-        if ($uid < 2) {
+        $oldUser = Mailchimp\Subscriber::getInstance(0, $old_email);
+        if ($oldUser->getUid() < 2) {
             Mailchimp\Logger::Audit("Webhook: old address $new_email not found");
             exit;
         }
@@ -126,9 +126,9 @@ case 'upemail':
         // Perform the update
         DB_query("UPDATE {$_TABLES['users']}
             SET email = '$new_email'
-            WHERE uid = $uid"
+            WHERE uid = {$oldUser->getEmail()}"
         );
-        Mailchimp\Logger::Audit("Webhook: updated user $uid email from $old_email to $new_email");
+        Mailchimp\Logger::Audit("Webhook: updated user {$oldUser->getEmail()} email from $old_email to $new_email");
     }
     break;
 

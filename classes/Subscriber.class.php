@@ -83,6 +83,7 @@ class Subscriber
         global $_USERS, $_TABLES;
 
         if ($uid < 2) {
+            // If anonymous, check by email to see if there's an account.
             $uid = (int)DB_getItem(
                 $_TABLES['users'],
                 'uid',
@@ -90,6 +91,7 @@ class Subscriber
             );
         }
         if ($uid > 1) {
+            // If this is a site member, check the cache and read the member info.
             $cache_key = 'uid_' . $uid;
             $obj = Cache::get($cache_key);
             if ($obj === NULL) {
@@ -97,6 +99,8 @@ class Subscriber
                 Cache::set($cache_key, $obj, 'users');
             }
         } else {
+            // Not a site member, create an empty Subscriber object with only
+            // the email address.
             $obj = new self;
             $obj->setEmail($email);
         }
@@ -376,27 +380,6 @@ class Subscriber
 
 
     /**
-     * Get the user ID given an email address.
-     *
-     * @param   string  $email  Email address
-     * @return  integer $uid    User ID, zero if not found
-     */
-    public static function getUidByEmail($email)
-    {
-        global $_TABLES, $_USER;
-
-        if (isset($_USER['email']) && $email == $_USER['email']) {
-            return (int)$_USER['uid'];
-        }
-        return (int)DB_getItem(
-            $_TABLES['users'],
-            'uid',
-            "email='" . DB_escapeString($email) . "'"
-        );
-    }
-
-
-    /**
      * Get the subscriber's user ID.
      *
      * @return  integer     User ID.
@@ -422,7 +405,7 @@ class Subscriber
      * @param   boolean $dbl_opt    True (default) to require double-opt-in
      * @return  boolean     True on success, False on failure
      */
-    public static function subscribe($uid, $email='', $list = '', $dbl_opt=true)
+    public function subscribe($list = '', $dbl_opt=true)
     {
         global $_CONF_MLCH, $LANG_MLCH, $_USER, $_TABLES;
 
@@ -436,18 +419,12 @@ class Subscriber
         if (empty($list) && !empty($_CONF_MLCH['def_list'])) {
             $list = $_CONF_MLCH['def_list'];
         }
-        if (empty($list)) {
+        if (empty($list) || empty($this->email) {
             return false;
         }
 
         if ($dbl_opt !== false) {
             $dbl_opt = true;
-        }
-        $uid = (int)$uid;
-
-        // Try to get the user ID from the email address if not given
-        if ($uid == 0) {
-            $uid = self::getUidByEmail($email);
         }
 
         $fname = '';
@@ -455,62 +432,31 @@ class Subscriber
         $tags = array();
         $params = new ApiParams;
         // Get the first and last name merge values.
-        if ($uid > 1) {
-            $U = self::getInstance($uid);
-
-            if (!empty($email)) {
-                $U->setEmail($email);
-            } else {
-                $email = $U->getEmail();
+        if ($this->uid > 1) {
+            foreach (array('FNAME', 'LNAME') as $var) {
+                // Parse the member name into first and last
+                $part = PLG_callFunctionForOnePlugin(
+                    'plugin_parseName_lglib',
+                    array(
+                        1 => $this->fullname,
+                        2 => $var[0],
+                    )
+                );
+                $params->addMerge($var, $part);
             }
-
-            // Parse the member name into first and last
-            $fname = PLG_callFunctionForOnePlugin(
-                'plugin_parseName_lglib',
-                array(
-                    1 => $U->getFullname(),
-                    2 => 'F',
-                )
-            );
-            $lname = PLG_callFunctionForOnePlugin(
-                'plugin_parseName_lglib',
-                array(
-                    1 => $U->getFullname(),
-                    2 => 'L',
-                )
-            );
-
-            // only update if there is data (might be values in the list not in
-            // the local db)
-            if (!empty($fname)) $params->addMerge('FNAME', $fname);
-            if (!empty($lname)) $params->addMerge('LNAME', $lname);
             $params->mergePlugins($uid);
         }
-        if (empty($email)) return false;    // Can't have an empty email address
 
         // Process Subscription
         $api = API::getInstance();
         $params
-            ->setEmail($email)
+            ->setEmail($this->email)
             ->setList($list)
             ->set('status', $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed')
             ->setDoubleOptin($dbl_opt)
             ->setUpdateExisting(true)
             ->get();
-        /*$params = array(
-            'id' => $list,
-            'email_address' => $email,
-            'email_type' => 'html',
-            'status' => $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed',
-            'double_optin' => $dbl_opt,
-            'update_existing' => true,
-        );
-        // Can't send an empty merge_fields array.
-        $merge_fields = MergeFields::get();
-        if (!empty($merge_fields)) {
-            $params['merge_fields'] = $merge_fields;
-        }*/
-        $mc_status = $api->subscribe($email, $params, $list);
+        $mc_status = $api->subscribe($this->email, $params, $list);
         if (!$api->success()) {
             $retval = false;
             Logger::Audit(
@@ -645,7 +591,9 @@ class Subscriber
         $sql_values = array();
         // Load up an array of subscribers that can be checked with isset()
         for ($i = 0; $i < $pages; $i++) {
-            $mc_status = $api->listMembers($list_id, array('offset'=>$offset, $count=>$perpage));
+            $mc_status = $api->listMembers(
+                $list_id, array('offset'=>$offset, 'count'=>$perpage)
+            );
             if (!$api->success()) {
                 return __FUNCTION__ . ":: Error requesting list information";
             }

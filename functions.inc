@@ -179,13 +179,12 @@ function plugin_user_create_mailchimp($uid)
     $Sub = Mailchimp\Subscriber::getInstance($uid);
     $email = $Sub->syncWithMC();
     //$email = MLCH_syncWithMC($uid);
-    if (isset($_POST['mailchimp_subscribe']) &&
+    if (
+        isset($_POST['mailchimp_subscribe']) &&
         $_POST['mailchimp_subscribe'] == 1 &&
         !$Sub->isSubscribed()
     ) {
-        //!MLCH_isSubscribed($uid) ) {
-        //MLCH_subscribe($uid, $email);
-        \Mailchimp\Subscriber::subscribe($uid, $email);
+        $Sub->subscribe();
     }
 }
 
