@@ -8,8 +8,12 @@ Uses the Mailchimp API version 3.0
 - New members can be automatically or optionally subscribed at registration
 - Anyone can subscribe through a PHP block
 - Cache update to sync local user accounts with MailChimp
-- MailChimp update to subscribe all local users. Segment is updated from
-the Membership plugin if it is installed.
+- MailChimp update to subscribe all local users.
+- Merge Fields can be obtained from other plugins, e.g. Membership.
+  - Plugins should implement a `plugin_getMergeFields_<plugin_name>` function
+    which accepts the user ID as the only argument. This should return an array
+    containing the user ID and an array of name=value pairs for merge fields.
+  - Works with version 0.2.0 or later of the Membership plugin.
 
 ## Included Modules
 - Mailchimp API class by Drew McLellan <drew.mclellan@gmail.com>
