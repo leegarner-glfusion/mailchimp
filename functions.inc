@@ -424,10 +424,8 @@ function plugin_itemsaved_mailchimp($id, $type, $old_id = '')
 
     //$tags = array();
     if (
-        is_array($info) && 
         isset($info['merge_fields']) &&
-        is_array($info['merge_fields']) &&
-        !empty($info['merge_fields'])
+        is_array($info['merge_fields'])
     ) {
         $ApiParams = (new ApiParams)
             ->setEmail($info['email']);
