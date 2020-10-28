@@ -13,6 +13,10 @@ Uses the Mailchimp API version 3.0
   - Plugins should implement a `plugin_getMergeFields_<plugin_name>` function
     which accepts the user ID as the only argument. This should return an array
     containing the user ID and an array of name=value pairs for merge fields.
+  - If appropriated, plugins can also define `plugin_getItemInfo_<plugin_name>()`
+    to accept `merge_fields` as part of the request and return the same array as
+    above. This is called from `plugin_itemSaved_mailchimp()` when a plugin's
+    item is saved.
   - Works with version 0.2.0 or later of the Membership plugin.
 
 ## Included Modules
