@@ -277,7 +277,7 @@ class Subscriber
      */
     public function getSubscribed()
     {
-        if (!$this->isValid()) {
+        if (!$this->isSiteMember()) {
             return false;
         }
 
@@ -296,7 +296,7 @@ class Subscriber
      * @param   string  $email      Optional email, for anonymous users
      * @return  boolean     True on success, False on failure
      */
-    public function updateMailchimp($ApiParams, $email='')
+    public function updateMailchimp(ApiParams $ApiParams, $email='')
     {
         global $_CONF_MLCH;
 
@@ -455,7 +455,7 @@ class Subscriber
             ->set('status', $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed')
             ->setDoubleOptin($dbl_opt)
             ->setUpdateExisting(true)
-            ->get();
+            ->toArray();
         $mc_status = $api->subscribe($this->email, $params, $list);
         if (!$api->success()) {
             $retval = false;
@@ -671,11 +671,34 @@ class Subscriber
      *
      * @return  boolean     True if valid, False if not.
      */
-    public function isValid()
+    public function isSiteMember()
     {
         return $this->uid > 0;
     }
 
+
+    /**
+     * Check if the email address is valid.
+     *
+     * @return  string  Error message, or empty string if address is OK
+     */
+    public function isValidEmail()
+    {
+        global $LANG_MLCH;
+
+        $retval = '';
+        if (empty($this->email)) {
+            $retval = $LANG_MLCH['email_missing'];
+        } elseif (
+            !preg_match(
+                "/^[_a-z0-9-]+([\.\+][_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*$/i",
+                $this->email
+            )
+        ) {
+            $retval = $LANG_MLCH['email_invalid'];
+        }
+        return $retval;
+    }
+
 }   // class Subscriber
 
-?>

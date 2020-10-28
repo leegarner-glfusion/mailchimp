@@ -21,7 +21,6 @@ namespace Mailchimp\Models;
 class ApiParams implements \ArrayAccess
 {
     private $properties = array();
-    //private $merge_fields = NULL;
 
     public function __construct()
     {
@@ -46,7 +45,6 @@ class ApiParams implements \ArrayAccess
             'update_existing' => true,
             'merge_fields' => array(),
         );
-        //$this->merge_fields = new MergeFields;
         return $this;
     }
 

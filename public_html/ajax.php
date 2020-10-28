@@ -43,15 +43,11 @@ if ($action == 'action') $action = $actionval;
 $success = false;
 switch ($action) {
 case 'add':
-    $address = $_POST['email'];
-    if (empty($address)) {
-        $msg = $LANG_MLCH['email_missing'];
-    } elseif (!preg_match("/^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*$/i", $address)) {
-        $msg = $LANG_MLCH['add_error'];
-    } else {
+    $Sub = Mailchimp\Subscriber::getInstance(0, $_POST['email']);
+    $msg = $Sub->isValidEmail();
+    if (empty($msg)) {
         // Basic checks passed, now try to add the address
-        //$success = MLCH_subscribe(0, $address);
-        $success = Mailchimp\Subscriber::subscribe(0, $address);
+        $success = $Sub->subscribe();
         switch ($success) {
         case  true:
             $msg = $_CONF_MLCH['dbl_optin_members'] ?
