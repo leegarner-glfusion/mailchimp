@@ -36,6 +36,7 @@ $LANG_MLCH = array(
     'dscp_sync_cache' => 'Update all local users in the cache table with the actual MailChimp status.',
     'dscp_import_users' => 'Subscribe all local users to the default list, double-optin required.',
     'email_missing' => 'The email address is required.',
+    'email_invalid' => 'An invalid email address was entered.',
 );
 
 
