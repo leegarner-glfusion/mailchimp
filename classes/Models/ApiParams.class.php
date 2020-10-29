@@ -15,8 +15,8 @@ namespace Mailchimp\Models;
 
 
 /**
- * The state of a membership.
- * @package membership
+ * API Parameters to be collected and passed to Mailchimp's API.
+ * @package mailchimp
  */
 class ApiParams implements \ArrayAccess
 {

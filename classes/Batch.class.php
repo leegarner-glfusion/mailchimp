@@ -10,6 +10,7 @@ namespace Mailchimp;
  * http://developer.mailchimp.com/documentation/mailchimp/reference/batches/
  *
  * @author  Drew McLellan <drew.mclellan@gmail.com>
+ * @package mailchimp
  */
 class Batch
 {

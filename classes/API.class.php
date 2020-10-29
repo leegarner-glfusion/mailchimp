@@ -2,16 +2,22 @@
 /**
  * Super-simple, minimum abstraction MailChimp API v3 wrapper.
  *
- * @author Drew McLellan <drew.mclellan@gmail.com>
- * @version 2.2
+ * @author      Drew McLellan <drew.mclellan@gmail.com>
+ * @version     2.2
+ * @package     mailchimp
+ * @version     v0.1.0
+ * @license     http://opensource.org/licenses/MIT
+ *              MIT License
+ * @filesource
  */
 //namespace DrewM\MailChimp;
 namespace Mailchimp;
 
 
 /**
- * MailChimp API v3: http://developer.mailchimp.com.
- * This wrapper: https://github.com/drewm/mailchimp-api.
+ * MailChimp API v3
+ * @see http://developer.mailchimp.com.
+ * @see https://github.com/drewm/mailchimp-api.
  */
 class API
 {
