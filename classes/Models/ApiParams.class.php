@@ -12,6 +12,7 @@
  * @filesource
  */
 namespace Mailchimp\Models;
+use Mailchimp\Config;
 
 
 /**
@@ -35,12 +36,10 @@ class ApiParams implements \ArrayAccess
      */
     public function init()
     {
-        global $_CONF_MLCH;
-
         $this->properties = array(
-            'id' => $_CONF_MLCH['def_list'],
+            'id' => Config::get('def_list'),
             'email_type' => 'html',
-            'status' => $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed',
+            'status' => Config::get('dbl_optin_members') ? 'pending' : 'subscribed',
             'double_optin' => true,
             'update_existing' => true,
             'merge_fields' => array(),
@@ -189,6 +188,13 @@ class ApiParams implements \ArrayAccess
     }
 
 
+    /**
+     * Get the API parameters as an array.
+     * Remove merge_fields if empty as passing an empty array to Mailchimp
+     * causes an error.
+     *
+     * @return  array   Array of parameters
+     */
     public function toArray()
     {
         if (empty($this->properties['merge_fields'])) {
@@ -270,11 +276,5 @@ class ApiParams implements \ArrayAccess
     {
         return isset($this->properties[$key]) ? $this->properties[$key] : null;
     }
-
-/*    public function current() {}
-    public function key() {}
-    public function next() {}
-    public function rewind() {}
-        public function valid() {}*/
 
 }

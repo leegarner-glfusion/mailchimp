@@ -12,6 +12,7 @@
  */
 //namespace DrewM\MailChimp;
 namespace Mailchimp;
+use Mailchimp\Config;
 
 
 /**
@@ -90,10 +91,9 @@ class API
      */
     public static function getInstance()
     {
-        global $_CONF_MLCH;
         static $mc = NULL;
         if ($mc === NULL) {
-            $mc = new self($_CONF_MLCH['api_key']);
+            $mc = new self(Config::get('api_key'));
         }
         return $mc;
     }
@@ -258,8 +258,8 @@ class API
     {
         $params = array(
             'count' => 10,
-            'offset' => 0,
             'status' => 'subscribed',
+            'offset' => 0,
         );
         foreach ($opts as $key=>$val) {
             switch ($key) {
@@ -269,19 +269,20 @@ class API
             case 'since_timestamp_opt':
             case 'before_last_changed':
                 $dt = new \Date($val);
-                $val = '&since_last_changed=' . $dt->format(\DateTime::ATOM);
+                $params[$key] = $dt->format(\DateTime::ATOM);
                 break;
             case 'count':
                 $val = min($val, 1000);
                 break;
+            /*case 'fields':
+                continue 2;
+                break;*/
             }
             $params[$key] = urlencode($val);
+            //$params[$key] = $val;
         }
-        $url = array();
-        foreach ($params as $key=>$val) {
-            $url[] = $key . '=' . $val;
-        }
-        $url = implode('&', $url);
+        $url = http_build_query($params);
+        //echo $url;die;
         return $this->get("lists/$list_id/members?$url");
     }
 
@@ -385,12 +386,10 @@ class API
      */
     public function getTags($email, $list_id='')
     {
-        global $_CONF_MLCH;
-
         $retval = array();
         if (empty($list_id)) {
-           if (!empty($_CONF_MLCH['def_list'])) {
-               $list_id = $_CONF_MLCH['def_list'];
+           if (!empty(Config::get('def_list'))) {
+               $list_id = Config::get('def_list');
            } else {
                return $retval;
            }

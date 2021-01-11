@@ -10,9 +10,10 @@
  *              GNU Public License v2 or later
  * @filesource
  */
+use Mailchimp\Config;
 
 // Required to get the config values
-global $_CONF, $_CONF_MLCH, $_DB_dbms;
+global $_CONF, $_DB_dbms;
 
 /**
  * Perform the upgrade starting at the current version.
@@ -22,9 +23,9 @@ global $_CONF, $_CONF_MLCH, $_DB_dbms;
  */
 function MLCH_do_upgrade($dvlp=false)
 {
-    global $_CONF_MLCH, $_PLUGIN_INFO;
+    global $_PLUGIN_INFO;
 
-    $pi_name = $_CONF_MLCH['pi_name'];
+    $pi_name = Config::get('pi_name');
     if (isset($_PLUGIN_INFO[$pi_name])) {
         if (is_array($_PLUGIN_INFO[$pi_name])) {
             // glFusion >= 1.6.6
@@ -106,7 +107,7 @@ function MLCH_upgrade_0_0_3()
  */
 function MLCH_do_upgrade_sql($version = 'Undefined', $dvlp=false)
 {
-    global $_TABLES, $_CONF_MLCH, $_MLCH_UPGRADE_SQL;
+    global $_TABLES, $_MLCH_UPGRADE_SQL;
 
     require_once __DIR__  . '/sql/mysql_install.php';
 
@@ -118,7 +119,7 @@ function MLCH_do_upgrade_sql($version = 'Undefined', $dvlp=false)
 
     // We control this, so it shouldn't happen, but just to be safe...
     if ($version == 'Undefined') {
-        Mailchimp\Logger::System("Error updating {$_CONF_MLCH['pi_name']} - Undefined Version");
+        Mailchimp\Logger::System("Error updating " . Config::get('pi_name'] . " - Undefined Version");
         return false;
     }
 
@@ -150,25 +151,24 @@ function MLCH_do_upgrade_sql($version = 'Undefined', $dvlp=false)
  */
 function MLCH_do_set_version($ver)
 {
-    global $_TABLES, $_CONF_MLCH;
+    global $_TABLES;
 
     $ver = DB_escapeString($ver);
     // now update the current version number.
     $sql = "UPDATE {$_TABLES['plugins']} SET
             pi_version = '$ver',
-            pi_gl_version = '{$_CONF_MLCH['gl_version']}',
-            pi_homepage = '{$_CONF_MLCH['pi_url']}'
-        WHERE pi_name = '{$_CONF_MLCH['pi_name']}'";
+            pi_gl_version = '" . Config::get('gl_version') . "',
+            pi_homepage = '" . Config::get('pi_url') . "'
+        WHERE pi_name = '" . Config::get('pi_name') . "'";
 
     $res = DB_query($sql, 1);
     if (DB_error()) {
-        Mailchimp\Logger::System("Error updating the {$_CONF_MLCH['pi_display_name']} Plugin version to $ver",1);
+        Mailchimp\Logger::System(
+            "Error updating the " . Config::get('pi_display_name') . " Plugin version to $ver",
+            1
+        );
         return false;
     } else {
         return true;
     }
 }
-
-
-
-?>

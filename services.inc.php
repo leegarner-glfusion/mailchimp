@@ -12,6 +12,7 @@
  *             GNU Public License v2 or later
  * @filesource
  */
+use Mailchimp\Config;
 
 if (!defined ('GVERSION')) {
     die ('This file can not be used on its own!');
@@ -39,7 +40,7 @@ function service_subscribe_mailchimp($A, &$output, &$svc_msg)
     }
 
     $uid = isset($A['uid']) ? (int)$A['uid'] : $_USER['uid'];
-    $list = isset($A['list']) ? $A['list'] : $_CONF_MLCH['def_list'];
+    $list = isset($A['list']) ? $A['list'] : Config::get('def_list');
     $email = isset($A['email']) ? $A['email'] : '';
     $dbl_optin = isset($A['dbl_optin']) ? $A['dbl_optin'] : null;
 
@@ -66,7 +67,7 @@ function service_unsubscribe_mailchimp($A, &$output, &$svc_msg)
     $retval = PLG_RET_OK;
     unset($A['gl_svc']);
     $uid = isset($A['uid']) ? (int)$A['uid'] : $_USER['uid'];
-    $list = isset($A['list']) ? $A['list'] : $_CONF_MLCH['def_list'];
+    $list = isset($A['list']) ? $A['list'] : Config::get('def_list');
     $email = isset($A['email']) ? $A['email'] : '';
     //$status = MLCH_unsubscribe($uid, $email, $list);
     $status = \Mailchimp\Subscriber::unsubscribe($uid, $email, $list);
@@ -116,12 +117,12 @@ function service_updateuser_mailchimp($A, &$output, &$svc_msg)
  */
 function service_issubscribed_mailchimp($A, &$output, &$svc_msg)
 {
-    global $_CONF_MLCH;
-
     if (!is_array($A)) {
         $A = array('uid' => $A);
     }
-    if (!isset($A['list'])) $A['list'] = $_CONF_MLCH['def_list'];
+    if (!isset($A['list'])) {
+        $A['list'] = Config::get('def_list');
+    }
     $output = \Mailchimp\Subscriber::getInstance($A['uid'])->isSubscribed($A['list']);
     return PLG_RET_OK;
 }

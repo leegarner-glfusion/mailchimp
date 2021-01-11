@@ -13,7 +13,7 @@
  */
 namespace Mailchimp;
 use Mailchimp\Models\ApiParams;
-
+use Mailchimp\Config;
 
 /**
  * Subscriber information class.
@@ -80,7 +80,7 @@ class Subscriber
      */
     public static function getInstance($uid, $email='')
     {
-        global $_USERS, $_TABLES;
+        global $_TABLES;
 
         if ($uid < 2) {
             // If anonymous, check by email to see if there's an account.
@@ -298,8 +298,6 @@ class Subscriber
      */
     public function updateMailchimp(ApiParams $ApiParams, $email='')
     {
-        global $_CONF_MLCH;
-
         // If the Mailchimp API is not available, just return OK
         if (!MAILCHIMP_ACTIVE) {
             return true;
@@ -368,9 +366,7 @@ class Subscriber
      */
     public function isSubscribed($list='')
     {
-        global $_CONF_MLCH;
-
-        if ('' == $list) $list = $_CONF_MLCH['def_list'];
+        if ('' == $list) $list = Config::get('def_list');
         if (isset($this->lists[$list]) && $this->lists[$list] == 1) {
             return true;
         } else {
@@ -401,13 +397,13 @@ class Subscriber
      *
      * @param   integer $uid    User ID being subscribed. 0 or 1 for anon
      * @param   string  $email  Email address. Taken from user if empty and uid > 1
-     * @param   string  $list   List to subscribe, default = $_CONF_MLCH['def_list']
+     * @param   string  $list   List to subscribe, default = the configured list
      * @param   boolean $dbl_opt    True (default) to require double-opt-in
      * @return  boolean     True on success, False on failure
      */
     public function subscribe($list = '', $dbl_opt=true)
     {
-        global $_CONF_MLCH, $LANG_MLCH, $_USER, $_TABLES;
+        global $LANG_MLCH;
 
         // if no api key, don't try anything
         if (!MAILCHIMP_ACTIVE) {
@@ -416,8 +412,8 @@ class Subscriber
         }
 
         // Mailchimp list choice. Not yet implemented.
-        if (empty($list) && !empty($_CONF_MLCH['def_list'])) {
-            $list = $_CONF_MLCH['def_list'];
+        if (empty($list) && !empty(Config::get('def_list'))) {
+            $list = Config::get('def_list');
         }
         if (empty($list) || empty($this->email)) {
             return false;
@@ -452,7 +448,7 @@ class Subscriber
         $params
             ->setEmail($this->email)
             ->setList($list)
-            ->set('status', $_CONF_MLCH['dbl_optin_members'] ? 'pending' : 'subscribed')
+            ->set('status', Config::get('dbl_optin_members') ? 'pending' : 'subscribed')
             ->setDoubleOptin($dbl_opt)
             ->setUpdateExisting(true)
             ->toArray();
@@ -493,7 +489,7 @@ class Subscriber
      */
     public static function unsubscribe($uid, $email='', $list = '')
     {
-        global $_CONF_MLCH, $_TABLES;
+        global $_TABLES;
 
         // if no api key, do nothing
         if (!MAILCHIMP_ACTIVE) {
@@ -501,11 +497,12 @@ class Subscriber
             return false;
         }
 
-        if (empty($list)) $list = $_CONF_MLCH['def_list'];
+        if (empty($list)) {
+            $list = Config::get('def_list');
+        }
         if ($uid > 1 && empty($email)) {
             $email = self::getInstance($uid)->getEmail();
         }
-        if (empty($list)) $list = $_CONF_MLCH['def_list'];
         if (empty($email) || empty($list)) return false;
 
         $api = API::getInstance();
@@ -538,10 +535,10 @@ class Subscriber
      */
     public function updateCache($clear=false, $listid='')
     {
-        global $_USER, $_CONF_MLCH, $_TABLES;
+        global $_TABLES;
 
         if (empty($listid)) {
-            $listid = $_CONF_MLCH['def_list'];
+            $listid = Config::get('def_list');
             if (empty($listid)) {
                 return;   // still empty, there's no list to check
             }
@@ -574,12 +571,10 @@ class Subscriber
      */
     public static function syncAllFromMailchimp()
     {
-        global $_TABLES, $LANG_MLCH, $_CONF_MLCH;
+        global $_TABLES, $LANG_MLCH;
 
         $api = API::getInstance();
-        $list_id = $_CONF_MLCH['def_list'];
-
-        $List = MailingList::getInstance($list_id);
+        $List = MailingList::getInstance();
         if ($List === NULL) {
             return 'Unable to retrieve list information.';
         }
@@ -591,13 +586,11 @@ class Subscriber
         $sql_values = array();
         // Load up an array of subscribers that can be checked with isset()
         for ($i = 0; $i < $pages; $i++) {
-            $mc_status = $api->listMembers(
-                $list_id, array('offset'=>$offset, 'count'=>$perpage)
-            );
+            $members = $List->getSubscribers();
             if (!$api->success()) {
                 return __FUNCTION__ . ":: Error requesting list information";
             }
-            foreach ($mc_status['members'] as $d) {
+            foreach ($members as $d) {
                 $subscribers[$d['email_address']] = 1;
             }
             $offset += $perpage;
@@ -605,7 +598,7 @@ class Subscriber
 
         // Now get all the site user accounts and see if their email
         // addresses are in the Mailchimp members array
-        $list_id = DB_escapeString($list_id);
+        $list_id = DB_escapeString($List->getID());
         $sql = "SELECT u.uid,u.email,u.fullname
             FROM {$_TABLES['users']} u
             WHERE uid > 1
@@ -646,7 +639,7 @@ class Subscriber
      */
     public function syncWithMC()
     {
-        global $_TABLES, $_CONF_MLCH;
+        global $_TABLES;
 
         if ($this->uid < 2) return '';    // nothing to do for anon users
 
@@ -700,5 +693,4 @@ class Subscriber
         return $retval;
     }
 
-}   // class Subscriber
-
+}

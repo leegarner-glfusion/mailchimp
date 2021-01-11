@@ -11,21 +11,15 @@
  * @filesource
  */
 
-/**
-*   Global configuration array
-*   @global array $_CONF_MLCH
-*/
-global $_CONF_MLCH;
-$_CONF_MLCH['pi_name']            = 'mailchimp';
-$_CONF_MLCH['pi_version']         = '0.1.0';
-$_CONF_MLCH['gl_version']         = '1.4.0';
-$_CONF_MLCH['pi_url']             = 'http://www.leegarner.com';
-$_CONF_MLCH['pi_display_name']    = 'MailChimp';
+// Set versions
+
+Mailchimp\Config::set('pi_version', '0.1.0');
+Mailchimp\Config::set('gl_version', '1.7.8');
 
 /**
-*   Global table name prefix
-*   @global string $_DB_table_prefix
-*/
+ * Global table name prefix.
+ * @global string $_DB_table_prefix
+ */
 global $_DB_table_prefix;
 $_TABLES['mailchimp_cache']    = $_DB_table_prefix . 'mailchimp_cache';
 

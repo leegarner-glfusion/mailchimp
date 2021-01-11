@@ -16,61 +16,6 @@ if (!defined ('GVERSION')) {
     die('This file can not be used on its own.');
 }
 
-/** Define a numeric value for Debug-level logging */
-define(MLCH_DEBUG, 1);
-/** Define a numeric value for Informational logging */
-define(MLCH_INFO, 2);
-/** Define a numeric value for Warning-level logging */
-define(MLCH_WARN, 4);
-/** Define a numeric value for Critical error logging */
-define(MLCH_CRIT, 8);
-
-/** Language file include */
-$lang = $_CONF['language'];
-$langfile = __DIR__ . '/language/' . $lang . '.php';
-if (file_exists($langfile)) {
-    require_once $langfile;
-} else {
-    $lang = 'english_utf-8';
-    require_once __DIR__ . '/language/english_utf-8.php';
-}
-if (file_exists(__DIR__ . '/language/custom/' . $lang. '.php')) {
-    // Include custom language strings, if available
-    include_once __DIR__ . '/language/custom/' . $lang. '.php';
-}
-
-// Check and see if we need to load the plugin configuration
-if (!isset($_CONF_MLCH['confirm_period'])) {
-    require_once $_CONF['path_system'] . 'classes/config.class.php';
-
-    $mlr_config = config::get_instance();
-    $_CONF_MLCH = $mlr_config->get_config('mailchimp');
-}
-// On rare occasions, a list ID can look like a numeric value and glFusion's
-// config system truncates the value. To prevent this, an 'x' is prepended
-// to the value to force it to be a string. Now we remove the 'x' to get back
-// to the real list ID.
-if ($_CONF_MLCH['def_list'][0] == 'x') {
-    $_CONF_MLCH['def_list'] = substr($_CONF_MLCH['def_list'], 1);
-}
-
-require_once __DIR__ . '/mailchimp.php';
-if (is_file(__DIR__ . '/config.php')) {
-    include_once __DIR__ . '/config.php';
-}
-
-// Set a flag to indicate that an API key has been entered. If not, we
-// don't want to call the MC API just to get errors.
-/** Indicator that the Mailchimp plugin is active */
-define(MAILCHIMP_ACTIVE, empty($_CONF_MLCH['api_key']) ? 0 : 1);
-/** Guest-facing plugin URL */
-define(MLCH_URL, $_CONF['site_url'] . '/' . $_CONF_MLCH['pi_name']);
-/** Admin-facing plugin URL */
-define(MLCH_ADMIN_URL, $_CONF['site_admin_url'] . '/plugins/' .
-        $_CONF_MLCH['pi_name']);
-/** Define the path to the plugin. */
-define(MLCH_PI_PATH, __DIR__);
-
 spl_autoload_register(function ($class)
 {
     // project-specific namespace prefix
@@ -100,7 +45,47 @@ spl_autoload_register(function ($class)
     }
 });
 use Mailchimp\Models\ApiParams;
+use Mailchimp\Config;
+Config::getInstance();
 
+/** Language file include */
+$lang = $_CONF['language'];
+$langfile = __DIR__ . '/language/' . $lang . '.php';
+if (file_exists($langfile)) {
+    require_once $langfile;
+} else {
+    $lang = 'english_utf-8';
+    require_once __DIR__ . '/language/english_utf-8.php';
+}
+if (file_exists(__DIR__ . '/language/custom/' . $lang. '.php')) {
+    // Include custom language strings, if available
+    include_once __DIR__ . '/language/custom/' . $lang. '.php';
+}
+
+// On rare occasions, a list ID can look like a numeric value and glFusion's
+// config system truncates the value. To prevent this, an 'x' is prepended
+// to the value to force it to be a string. Now we remove the 'x' to get back
+// to the real list ID.
+if (Config::get('def_list')[0] == 'x') {
+    Config::set('def_list', substr(Config::get('def_list'), 1));
+}
+
+require_once __DIR__ . '/mailchimp.php';
+if (is_file(__DIR__ . '/config.php')) {
+    include_once __DIR__ . '/config.php';
+}
+
+// Set a flag to indicate that an API key has been entered. If not, we
+// don't want to call the MC API just to get errors.
+/** Indicator that the Mailchimp plugin is active */
+define(MAILCHIMP_ACTIVE, empty(Config::get('api_key')) ? 0 : 1);
+/** Guest-facing plugin URL */
+define(MLCH_URL, $_CONF['site_url'] . '/' . Config::get('pi_name'));
+/** Admin-facing plugin URL */
+define(MLCH_ADMIN_URL, $_CONF['site_admin_url'] . '/plugins/' .
+        Config::get('pi_name'));
+/** Define the path to the plugin. */
+define(MLCH_PI_PATH, __DIR__);
 
 /**
  * This will put an option for mailchimp in the command and control block on moderation.php.
@@ -109,12 +94,12 @@ use Mailchimp\Models\ApiParams;
  */
 function plugin_cclabel_mailchimp()
 {
-    global $_CONF_MLCH;
-
     if (SEC_hasRights('mailchimp.admin', 'OR')) {
-        return array ($_CONF_MLCH['pi_display_name'],
-                MLCH_ADMIN_URL . '/index.php',
-                plugin_geticon_mailchimp());
+        return array(
+            Config::get('pi_display_name'),
+            Config::get('admin_url') . '/index.php',
+            plugin_geticon_mailchimp()
+        );
     }
     return false;
 }
@@ -128,8 +113,7 @@ function plugin_cclabel_mailchimp()
  */
 function plugin_chkVersion_mailchimp()
 {
-    global $_CONF_MLCH;
-    return $_CONF_MLCH['pi_version'];
+    return Config::get('pi_version');
 }
 
 
@@ -140,12 +124,12 @@ function plugin_chkVersion_mailchimp()
  */
 function plugin_getadminoption_mailchimp()
 {
-    global $_CONF, $_CONF_MLCH, $LANG_MLCH;
+    global $_CONF, $LANG_MLCH;
 
 //    if (plugin_ismoderator_mailchimp()) {
         $retval = array(
             $LANG_MLCH['menu_label'],
-            "{$_CONF['site_admin_url']}/plugins/{$_CONF_MLCH['pi_name']}/index.php"
+            Config::get('admin_url') . '/index.php'
         );
 /*    } else {
         $retval = '';
@@ -196,9 +180,7 @@ function plugin_user_create_mailchimp($uid)
  */
 function plugin_user_delete_mailchimp($uid)
 {
-    global $_CONF_MLCH;
-
-    if ($_CONF_MLCH['del_user_unsub']) {
+    if (Config::get('del_user_unsub')) {
         //MLCH_unsubscribe($uid);
         \Mailchimp\Subscriber::unsubscribe($uid);
     }
@@ -214,9 +196,7 @@ function plugin_user_delete_mailchimp($uid)
  */
 function plugin_user_login_mailchimp($uid)
 {
-    global $_CONF_MLCH;
-
-    if ($_CONF_MLCH['sync_at_login']) {
+    if (Config::get('sync_at_login')) {
         //MLCH_syncWithMC($uid);
     }
 }
@@ -233,7 +213,7 @@ function plugin_user_login_mailchimp($uid)
  */
 function plugin_profileedit_mailchimp($uid, $panel, $fieldset)
 {
-    global $_TABLES, $_CONF_MLCH, $_USER;
+    global $_TABLES, $_USER;
 
     $retval = '';
     $uid = (int)$uid;
@@ -255,7 +235,7 @@ function plugin_profileedit_mailchimp($uid, $panel, $fieldset)
         $cnt = DB_count(
             $_TABLES['mailchimp_cache'],
             array('uid', 'listid', 'subscribed'),
-            array($uid, DB_escapeString($_CONF_MLCH['def_list']), 1)
+            array($uid, DB_escapeString(Config::get('def_list')), 1)
         );
         if ($cnt == 1) {
             $chk = 'checked="checked"';
@@ -289,7 +269,7 @@ function plugin_profileedit_mailchimp($uid, $panel, $fieldset)
  */
 function plugin_user_changed_mailchimp($uid)
 {
-    global $_USER, $_CONF_MLCH;
+    global $_USER;
 
     static $alreadyDone = NULL;
     if ($alreadyDone) {
@@ -300,7 +280,7 @@ function plugin_user_changed_mailchimp($uid)
     if ($uid == $_USER['uid']) {
         // Logged-in user saving their profile, double opt-in not needed unless
         // configured to require it anyway
-        $dbl_optin = $_CONF_MLCH['dbl_optin_members'] == 0 ? false : true;
+        $dbl_optin = Config::get('dbl_optin_members') == 0 ? false : true;
     } else {
         // Administrator is updating the user record, double opt-in required
         $dbl_optin = true;
@@ -476,7 +456,7 @@ function plugin_autouninstall_mailchimp()
  */
 function phpblock_mailchimp_sub()
 {
-    global $_CONF, $LANG_MLCH, $_CONF_MLCH, $_USER, $_TABLES;
+    global $_CONF, $LANG_MLCH, $_USER, $_TABLES;
 
     $Sub = Mailchimp\Subscriber::getInstance($_USER['uid']);
     if ($Sub->isSubscribed()) {
@@ -506,7 +486,7 @@ function phpblock_mailchimp_sub()
  */
 function plugin_templatesetvars_mailchimp ($templatename, &$template)
 {
-    global $_CONF_MLCH, $LANG_MLCH;
+    global $LANG_MLCH;
 
     $chk = '';
     $pluginFields = '';
@@ -523,7 +503,7 @@ function plugin_templatesetvars_mailchimp ($templatename, &$template)
 
     if ($templatename == 'registration') {
         $existingPluginFields = $template->get_var('plugin_fields');
-        switch ($_CONF_MLCH['sub_register']) {
+        switch (Config::get('sub_register')) {
         case 0:     // disabled
             break;
 
@@ -559,13 +539,13 @@ function plugin_templatesetvars_mailchimp ($templatename, &$template)
  */
 function plugin_getheadercss_mailchimp()
 {
-    global $_CONF, $_CONF_MLCH;
+    global $_CONF;
 
     $styles = array();
     $files = array('style.css',);
 
     $pi_css = __DIR__ . '/css/';
-    $layout_css = "{$_CONF['path_layout']}plugins/{$_CONF_MLCH['pi_name']}/";
+    $layout_css = "{$_CONF['path_layout']}plugins/" . Config::get('pi_name') . '/';
 
     foreach ($files as $file) {
         if (@file_exists($layout_css . $file)) {
@@ -683,12 +663,12 @@ function plugin_wsEnabled_mailchimp()
  */
 function MLCH_getLists()
 {
-    global $_CONF_MLCH;
     static $lists = null;
 
+    echo __FUNCTION__ . ' deprecated'; die;
     if ($lists === null) {
         $lists = array();
-        if (MAILCHIMP_ACTIVE && !empty($_CONF_MLCH['api_key'])) {
+        if (MAILCHIMP_ACTIVE && !empty(Config::get('api_key'))) {
             //USES_mailchimp_class_api();
             $api = Mailchimp\API::getInstance();
             $list_data = $api->lists();
@@ -720,11 +700,10 @@ function MLCH_getLists()
  */
 function MLCH_getDocURL($file, $doclang='')
 {
-    global $_CONF, $_CONF_MLCH;
+    global $_CONF;
 
     if ($doclang == '') $doclang = $_CONF['language'];
-    $doc_path = $_CONF['path_html'] . $_CONF_MLCH['pi_name'] .
-                "/docs/$doclang/";
+    $doc_path = Config::get('url') . "/docs/$doclang/";
     $doc_url = '';
 
     if ($file != '') {
@@ -744,4 +723,3 @@ function MLCH_getDocURL($file, $doclang='')
 
 require_once __DIR__ . '/services.inc.php';
 
-?>
