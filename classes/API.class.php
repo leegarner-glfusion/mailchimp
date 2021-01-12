@@ -368,6 +368,9 @@ class API
         if (!isset($args['email_address'])) {
             $args['email_address'] = $email;
         }
+        if (is_object($args)) {
+            $args = $args->toArray();
+        }
         $hash = $this->subscriberHash($email);
         foreach ($lists as $list_id) {
             //$status = $this->post("/lists/$list_id/members/", $args);
