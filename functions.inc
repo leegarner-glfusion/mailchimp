@@ -277,15 +277,6 @@ function plugin_user_changed_mailchimp($uid)
     }
     $alreadyDone = true;
 
-    if ($uid == $_USER['uid']) {
-        // Logged-in user saving their profile, double opt-in not needed unless
-        // configured to require it anyway
-        $dbl_optin = Config::get('dbl_optin_members') == 0 ? false : true;
-    } else {
-        // Administrator is updating the user record, double opt-in required
-        $dbl_optin = true;
-    }
-
     $U = Mailchimp\Subscriber::getInstance($uid);
     // Since this is calling an external API instead of just updating our
     // own database, make sure the subscription selection has actually changed
@@ -293,12 +284,20 @@ function plugin_user_changed_mailchimp($uid)
         isset($_POST['mailchimp_subscribe']) &&
         $_POST['mailchimp_oldsub'] == '0'
     ) {
-        Mailchimp\Subscriber::subscribe($uid, $_POST['email'], '', $dbl_optin);
+        if ($uid == $_USER['uid']) {
+            // Logged-in user saving their profile, double opt-in not needed unless
+            // configured to require it anyway
+            $dbl_optin = Config::get('dbl_optin_members') == 0 ? false : true;
+        } else {
+            // Administrator is updating the user record, double opt-in required
+            $dbl_optin = true;
+        }
+        $U->subscribe('', $dbl_optin);
     } elseif (
         !isset($_POST['mailchimp_subscribe']) &&
         $_POST['mailchimp_oldsub'] == '1'
     ) {
-        Mailchimp\Subscriber::unsubscribe($uid, $_POST['email']);
+        Mailchimp\Subscriber::unsubscribe($uid);
     }
 
     // Update the name merge fields if changed
@@ -456,7 +455,7 @@ function plugin_autouninstall_mailchimp()
  */
 function phpblock_mailchimp_sub()
 {
-    global $_CONF, $LANG_MLCH, $_USER, $_TABLES;
+    global $_CONF, $LANG_MLCH, $_USER;
 
     $Sub = Mailchimp\Subscriber::getInstance($_USER['uid']);
     if ($Sub->isSubscribed()) {
@@ -634,13 +633,7 @@ function plugin_getconfigelementhelp_mailchimp($option, $doclang='english')
  */
 function plugin_user_move_mailchimp($origUID, $destUID)
 {
-    global $_TABLES;
-
-    $origUID = (int)$origUID;
-    $destUID = (int)$destUID;
-
-    DB_query("UPDATE {$_TABLES['mailchimp_cache']}
-            SET uid = $destUID WHERE uid = $origUID", 1);
+    Mailchimp\Subscribe::userMove($origUID, $destUID);
 }
 
 
@@ -651,40 +644,7 @@ function plugin_user_move_mailchimp($origUID, $destUID)
  */
 function plugin_wsEnabled_mailchimp()
 {
-    return true;
-}
-
-
-/**
- * Get the list of Mailchimp lists.
- * Holds lists in a static variable to save API calls.
- *
- * @return  mixed   Array of lists, or false on failure
- */
-function MLCH_getLists()
-{
-    static $lists = null;
-
-    echo __FUNCTION__ . ' deprecated'; die;
-    if ($lists === null) {
-        $lists = array();
-        if (MAILCHIMP_ACTIVE && !empty(Config::get('api_key'))) {
-            //USES_mailchimp_class_api();
-            $api = Mailchimp\API::getInstance();
-            $list_data = $api->lists();
-            if (is_array($list_data)) {
-                foreach ($list_data['lists'] as $key => $list) {
-                    $members = $api->listMembers($list['id']);
-                    $lists[$list['id']] = array(
-                        'id' => $list['id'],
-                        'name' => $list['name'],
-                        'members' => $members['total_items'],
-                    );
-                }
-            }
-        }
-    }
-    return $lists;
+    return false;
 }
 
 
