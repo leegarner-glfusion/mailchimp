@@ -14,7 +14,7 @@
 namespace Mailchimp\sendinblue;
 use Mailchimp\Config;
 use Mailchimp\Logger;
-use Mailchimp\Models\ListInfo;
+use Mailchimp\MailingList;
 use Mailchimp\Models\SubscriberInfo;
 
 
@@ -305,10 +305,11 @@ class API
         $response = $this->get('contacts/lists', $params);
         if (is_array($response) && isset($response['lists'])) {
             foreach ($response['lists'] as $resp) {
-                $retval[$resp['id']] = new ListInfo;
-                $retval[$resp['id']]['id'] = $resp['id'];
-                $retval[$resp['id']]['name'] = $resp['name'];
-                $retval[$resp['id']]['total_members'] = $resp['totalSubscribers'];
+                $retval[$resp['id']] = new MailingList(array(
+                    'id' => $resp['id'],
+                    'name' => $resp['name'],
+                    'members' => $resp['totalSubscribers'],
+                ) );
             }
         }
         return $retval;

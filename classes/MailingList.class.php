@@ -78,15 +78,16 @@ class MailingList
                 $api = self::_getApi();
                 $list_data = $api->lists();
                 if (is_array($list_data)) {
-                    foreach ($list_data as $key => $list) {
+                    $lists = $list_data;
+                    //foreach ($list_data as $key => $list) {
                         //$members = $api->listMembers($list['id']);
-                        $lists[$list['id']] = new self($list->toArray());
+                    //    $lists[$list['id']] = new self($list->toArray());
                             /*'id' => $list['id'],
                             'name' => $list['name'],
                             //'members' => $members['total_items'],
                             'members' => $list['stats']['member_count'],
                         ) );*/
-                    }
+                    //}
                 }
             }
         }
@@ -121,7 +122,6 @@ class MailingList
      */
     public function getMemberCount()
     {
-        $this->member_count = 2;
         return (int)$this->member_count;
     }
 
