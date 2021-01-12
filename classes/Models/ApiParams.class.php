@@ -21,8 +21,14 @@ use Mailchimp\Config;
  */
 class ApiParams implements \ArrayAccess
 {
+    /** Properties array. Sent to the API as an array.
+     * @var array */
     private $properties = array();
 
+
+    /**
+     * Initialize the parameters array.
+     */
     public function __construct()
     {
         $this->init();
@@ -40,7 +46,7 @@ class ApiParams implements \ArrayAccess
             'id' => Config::get('def_list'),
             'email_type' => 'html',
             'status' => Config::get('dbl_optin_members') ? 'pending' : 'subscribed',
-            'double_optin' => true,
+            //'double_optin' => true,
             'update_existing' => true,
             'merge_fields' => array(),
         );
@@ -112,7 +118,8 @@ class ApiParams implements \ArrayAccess
      */
     public function setDoubleOptin($flag)
     {
-        $this->double_optin = $flag ? true : false;
+        //$this->properties['double_optin'] = $flag ? true : false;
+        $this->properties['status'] = $flag ? 'pending' : 'subscribed';
         return $this;
     }
 
@@ -138,7 +145,7 @@ class ApiParams implements \ArrayAccess
      */
     public function setUpdateExisting($flag)
     {
-        $this->update_existing = $flag ? true : false;
+        $this->properties['update_existing'] = $flag ? true : false;
         return $this;
     }
 
