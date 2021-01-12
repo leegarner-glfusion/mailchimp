@@ -46,6 +46,22 @@ class MailingList
     }
 
 
+    private function _getApi()
+    {
+        static $api = NULL;
+        if ($api === NULL) {
+            switch (Config::get('provider')) {
+            case 'mailchimp':
+            case 'sendinblue':
+                $cls = 'Mailchimp\\' . Config::get('provider') . '\\API';
+                break;
+            }
+            $api = $cls::getInstance();
+        }
+        return $api;
+    }
+
+
     /**
      * Get the list of Mailchimp lists.
      * Holds lists in a static variable to save API calls.
@@ -59,17 +75,17 @@ class MailingList
         if ($lists === null) {
             $lists = array();
             if (MAILCHIMP_ACTIVE && !empty(Config::get('api_key'))) {
-                $api = API::getInstance();
+                $api = self::_getApi();
                 $list_data = $api->lists();
                 if (is_array($list_data)) {
-                    foreach ($list_data['lists'] as $key => $list) {
+                    foreach ($list_data as $key => $list) {
                         //$members = $api->listMembers($list['id']);
-                        $lists[$list['id']] = new self(array(
-                            'id' => $list['id'],
+                        $lists[$list['id']] = new self($list->toArray());
+                            /*'id' => $list['id'],
                             'name' => $list['name'],
                             //'members' => $members['total_items'],
                             'members' => $list['stats']['member_count'],
-                        ) );
+                        ) );*/
                     }
                 }
             }
@@ -105,6 +121,7 @@ class MailingList
      */
     public function getMemberCount()
     {
+        $this->member_count = 2;
         return (int)$this->member_count;
     }
 
@@ -206,22 +223,20 @@ class MailingList
         $pages = ceil(($this->getMemberCount() / $perpage));
         $subscribers = array();
         // Load up an array of subscribers that can be checked with isset()
-        $api = API::getInstance();
+        $api = self::_getApi();
         for ($i = 0; $i < $pages; $i++) {
             $opts = array(
                 'offset' => $offset,
                 'count' => $perpage,
             );
             $response = $api->listMembers($this->getID(), $opts);
-            if (!$api->success()) {
+            /*if (!$api->success()) {
                 return __FUNCTION__ . ":: Error requesting list information";
-            }
-            foreach ($response['members'] as $d) {
+            }*/
+            foreach ($response as $d) {
                 $members[$d['id']] = array(
                     'id' => $d['id'],
                     'email_address' => $d['email_address'],
-                    'unique_email_id' => $d['unique_email_id'],
-                    'web_id'        => $d['web_id'],
                     'email_type'    => $d['email_type'],
                     'status'        => $d['status'],
                     'merge_fields'  => $d['merge_fields'],
