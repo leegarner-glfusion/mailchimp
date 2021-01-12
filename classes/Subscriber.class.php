@@ -440,7 +440,7 @@ class Subscriber
                 );
                 $params->addMerge($var, $part);
             }
-            $params->mergePlugins($uid);
+            $params->mergePlugins($this->uid);
         }
 
         // Process Subscription
@@ -451,12 +451,13 @@ class Subscriber
             ->set('status', Config::get('dbl_optin_members') ? 'pending' : 'subscribed')
             ->setDoubleOptin($dbl_opt)
             ->setUpdateExisting(true)
+            ->mergePlugins($this->uid)
             ->toArray();
         $mc_status = $api->subscribe($this->email, $params, $list);
         if (!$api->success()) {
             $retval = false;
             Logger::Audit(
-                "Failed to subscribe $email to $list. Error: " . $api->getLastError(),
+                "Failed to subscribe {$this->email} to $list. Error: " . $api->getLastError(),
                 true
             );
             $body = json_decode($api->getLastResponse()['body'],true);
@@ -468,11 +469,11 @@ class Subscriber
             $retval = true;
             $msg = $dbl_opt ? $LANG_MLCH['dbl_optin_required'] :
                 $LANG_MLCH['no_dbl_optin'];
-            Logger::Audit("Subscribed $email to $list." . $msg);
+            Logger::Audit("Subscribed {$this->email} to $list." . $msg);
         }
-        if ($retval && $uid > 1) {
+        if ($retval && $this->uid > 1) {
             // already instantiated above
-            $U->updateCache();
+            $this->updateCache();
         }
 
         return $retval;
@@ -691,6 +692,26 @@ class Subscriber
             $retval = $LANG_MLCH['email_invalid'];
         }
         return $retval;
+    }
+
+
+    /**
+     * Handle changing a user's ID, e.g. when merging accounts.
+     *
+     * @param   integer $origUID    Original user ID
+     * @param   integer $destUID    New user ID
+     */
+    public static function userMove($origUID, $destUID)
+    {
+        global $_TABLES;
+
+        $origUID = (int)$origUID;
+        $destUID = (int)$destUID;
+
+        DB_query(
+            "UPDATE {$_TABLES['mailchimp_cache']}
+            SET uid = $destUID WHERE uid = $origUID"
+        );
     }
 
 }
